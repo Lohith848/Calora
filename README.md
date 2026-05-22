@@ -57,6 +57,6 @@ lib/          - Utilities and services
 assets/       - Images and static assets
 ```
 
-## License
+## Built By
 
-Private project.
+LOHITH G
