@@ -14,6 +14,7 @@ import {
   TAB_INACTIVE,
   TAB_HEIGHT,
   BG,
+  SURFACE,
 } from '@/lib/theme'
 import { Text } from '@/components/ui/Text'
 
@@ -149,12 +150,12 @@ const s = StyleSheet.create({
     shadowOpacity: 0.3, shadowRadius: 12,
     elevation: 20,
     borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: 'rgba(255,255,255,0.08)',
+    borderTopColor: 'rgba(0,0,0,0.08)',
   },
-  wrapperAndroid: { backgroundColor: BG },
+  wrapperAndroid: { backgroundColor: SURFACE },
   overlay: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: `${BG}B8`, // BG at ~72% opacity
+    backgroundColor: 'rgba(255,255,255,0.80)',
   },
   bar: {
     flexDirection: 'row', height: TAB_HEIGHT, alignItems: 'stretch',

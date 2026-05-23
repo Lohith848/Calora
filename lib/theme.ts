@@ -12,39 +12,42 @@
  */
 
 // ── Primary brand color ───────────────────────────────────────────────────────
-// 🎨 Change this one value to rebrand the whole app
-export const ACCENT = '#10b981'           // emerald green
+// 🎨 Central black accent for primary buttons and status highlights
+export const ACCENT = '#000000'
 
 // Derived from ACCENT — adjust opacity as needed
-export const ACCENT_DIM = 'rgba(16,185,129,0.12)'
-export const ACCENT_BORDER = 'rgba(16,185,129,0.30)'
-export const ACCENT_GLOW = 'rgba(16,185,129,0.20)'
-// Text color on dark background using accent tone
-export const ACCENT_LIGHT = '#34d399'
+export const ACCENT_DIM = 'rgba(0,0,0,0.05)'
+export const ACCENT_BORDER = 'rgba(0,0,0,0.12)'
+export const ACCENT_GLOW = 'rgba(0,0,0,0.08)'
+export const ACCENT_LIGHT = '#333333'
 
 // ── Backgrounds ───────────────────────────────────────────────────────────────
-export const BG = '#0d0d0d'        // main app background
-export const SURFACE = '#1a1a1a'        // cards, inputs
-export const SURFACE2 = '#242424'        // elevated surface (sheet panels, etc.)
-export const SURFACE3 = '#2e2e2e'        // even more elevated
+export const BG = '#f9f9f9'              // system grouped background
+export const SURFACE = '#ffffff'         // elevated card white
+export const SURFACE2 = '#f3f3f3'        // low container gray
+export const SURFACE3 = '#eeeeee'        // more elevated container gray
 
 // ── Text ──────────────────────────────────────────────────────────────────────
-export const TEXT_PRIMARY = '#ffffff'
-export const TEXT_SECONDARY = 'rgba(255,255,255,0.55)'
-export const TEXT_TERTIARY = 'rgba(255,255,255,0.28)'
-export const TEXT_DISABLED = 'rgba(255,255,255,0.18)'
+export const TEXT_PRIMARY = '#1b1b1b'
+export const TEXT_SECONDARY = '#5d5e63'
+export const TEXT_TERTIARY = '#848484'
+export const TEXT_DISABLED = '#c6c6cb'
 
 // ── Borders ───────────────────────────────────────────────────────────────────
-export const BORDER = 'rgba(255,255,255,0.09)'
-export const BORDER_ACTIVE = 'rgba(255,255,255,0.18)'
+export const BORDER = 'rgba(0,0,0,0.08)'
+export const BORDER_ACTIVE = 'rgba(0,0,0,0.18)'
 
-// ── Semantic ──────────────────────────────────────────────────────────────────
-export const ERROR = '#f87171'
-export const ERROR_DIM = 'rgba(248,113,113,0.10)'
-export const WARNING = '#fbbf24'
-export const SUCCESS = '#4ade80'
+// ── Semantic / Macro Colors ───────────────────────────────────────────────────
+export const ERROR = '#ba1a1a'
+export const ERROR_DIM = '#ffdad6'
+export const WARNING = '#FFCC00'          // Fat yellow
+export const SUCCESS = '#34C759'          // Protein green
+export const CARBS = '#007AFF'            // Carbs blue
+export const ENERGY_ORANGE = '#FF9500'     // Calories orange
+export const STREAK_RED = '#FF3B30'        // Streak red
+export const WATER_CYAN = '#5AC8FA'        // Water cyan
 
 // ── Tab bar ───────────────────────────────────────────────────────────────────
-export const TAB_ACTIVE = ACCENT
-export const TAB_INACTIVE = 'rgba(255,255,255,0.40)'
+export const TAB_ACTIVE = '#000000'
+export const TAB_INACTIVE = '#616267'
 export const TAB_HEIGHT = 68
