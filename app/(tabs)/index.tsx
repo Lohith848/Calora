@@ -6,28 +6,32 @@ import {
   RefreshControl,
   Pressable,
   Image,
+  Dimensions,
 } from 'react-native'
 import { router } from 'expo-router'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useQueryClient } from '@tanstack/react-query'
 import { Ionicons } from '@expo/vector-icons'
 import Svg, { Circle } from 'react-native-svg'
-import { LinearGradient } from 'expo-linear-gradient'
 
 import { Text } from '@/components/ui/Text'
 import { Card } from '@/components/ui/Card'
 import {
-  ACCENT,
-  ACCENT_DIM,
-  ACCENT_BORDER,
   BG,
   SURFACE,
   SURFACE2,
+  SURFACE3,
   BORDER,
   TEXT_PRIMARY,
   TEXT_SECONDARY,
   TEXT_TERTIARY,
   ERROR,
+  SUCCESS,
+  WARNING,
+  CARBS,
+  ENERGY_ORANGE,
+  STREAK_RED,
+  WATER_CYAN,
 } from '@/lib/theme'
 import { TAB_BAR_CLEARANCE } from '@/components/TabBar'
 import { useMeals, useDeleteMeal, type MealLog, type MealType } from '@/hooks/useMeals'
@@ -35,15 +39,17 @@ import { useGoals } from '@/hooks/useGoals'
 import { useStreak } from '@/hooks/useStreaks'
 import { useProfile } from '@/hooks/useProfile'
 
+const { width: SW } = Dimensions.get('window')
+
 export default function HomeScreen() {
   const insets = useSafeAreaInsets()
   const queryClient = useQueryClient()
 
-  // State to hold selected date (local date context)
+  // Selected date context
   const [selectedDate, setSelectedDate] = useState<Date>(new Date())
   const [refreshing, setRefreshing] = useState(false)
 
-  // Local date formatter helper: YYYY-MM-DD in local time
+  // Local date formatter helper: YYYY-MM-DD
   const getLocalDateString = (date: Date) => {
     const year = date.getFullYear()
     const month = String(date.getMonth() + 1).padStart(2, '0')
@@ -55,40 +61,35 @@ export default function HomeScreen() {
 
   // Load backend/local hooks
   const { data: profile } = useProfile()
-  const { data: meals = [], isLoading: loadingMeals, refetch: refetchMeals } = useMeals(dateString)
-  const { data: goals, isLoading: loadingGoals } = useGoals()
+  const { data: meals = [], refetch: refetchMeals } = useMeals(dateString)
+  const { data: goals } = useGoals()
   const { data: streak = 0 } = useStreak()
   const deleteMealMutation = useDeleteMeal(dateString)
 
-  const greeting = (() => {
-    const h = new Date().getHours()
-    if (h < 12) return 'Good morning'
-    if (h < 17) return 'Good afternoon'
-    return 'Good evening'
-  })()
+  // Format date headers
+  const weekdays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
 
-  // Date picker operations
+  // Calculate the 7 days of the week containing the selectedDate (Sunday to Saturday)
+  const calendarWeek = useMemo(() => {
+    const dates = []
+    const current = new Date(selectedDate)
+    const day = current.getDay() // 0 = Sun, 1 = Mon, etc.
+    const sunday = new Date(current)
+    sunday.setDate(current.getDate() - day)
+
+    for (let i = 0; i < 7; i++) {
+      const d = new Date(sunday)
+      d.setDate(sunday.getDate() + i)
+      dates.push(d)
+    }
+    return dates
+  }, [selectedDate])
+
   const changeDate = (offset: number) => {
     const next = new Date(selectedDate)
     next.setDate(selectedDate.getDate() + offset)
     setSelectedDate(next)
   }
-
-  const dateLabel = useMemo(() => {
-    const today = getLocalDateString(new Date())
-    const yesterday = getLocalDateString(new Date(new Date().getTime() - 86400000))
-    const tomorrow = getLocalDateString(new Date(new Date().getTime() + 86400000))
-
-    if (dateString === today) return 'Today'
-    if (dateString === yesterday) return 'Yesterday'
-    if (dateString === tomorrow) return 'Tomorrow'
-
-    return selectedDate.toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric',
-    })
-  }, [dateString, selectedDate])
 
   // Macro metrics sums
   const totals = useMemo(() => {
@@ -109,26 +110,6 @@ export default function HomeScreen() {
   const carbsGoal = goals?.carbs ?? 220
   const fatGoal = goals?.fat ?? 70
 
-  const remainingCalories = calorieGoal - totals.calories
-
-  // Split meals by type
-  const categorizedMeals = useMemo(() => {
-    const groups: Record<MealType, MealLog[]> = {
-      breakfast: [],
-      lunch: [],
-      dinner: [],
-      snack: [],
-    }
-    meals.forEach((m) => {
-      if (groups[m.mealType]) {
-        groups[m.mealType].push(m)
-      } else {
-        groups.snack.push(m)
-      }
-    })
-    return groups
-  }, [meals])
-
   const onRefresh = async () => {
     setRefreshing(true)
     await Promise.all([
@@ -148,64 +129,108 @@ export default function HomeScreen() {
     }
   }
 
-  // Visual SVG Ring Config
-  const ringSize = 140
-  const strokeWidth = 10
+  // Format timestamp (e.g. 12:37pm)
+  const formatTime = (isoString: string) => {
+    try {
+      const d = new Date(isoString)
+      let hours = d.getHours()
+      const minutes = String(d.getMinutes()).padStart(2, '0')
+      const ampm = hours >= 12 ? 'pm' : 'am'
+      hours = hours % 12
+      hours = hours ? hours : 12 // the hour '0' should be '12'
+      return `${hours}:${minutes}${ampm}`
+    } catch {
+      return '12:00pm'
+    }
+  }
+
+  // Main Calorie Ring Config
+  const ringSize = 88
+  const strokeWidth = 8
   const radius = (ringSize - strokeWidth) / 2
   const circumference = radius * 2 * Math.PI
-  const progressRatio = totals.calories / calorieGoal
+  const progressRatio = calorieGoal > 0 ? totals.calories / calorieGoal : 0
   const strokeDashoffset = circumference - Math.min(1, progressRatio) * circumference
 
   return (
     <View style={s.root}>
+      {/* TopAppBar header */}
+      <View style={[s.appHeader, { paddingTop: insets.top + 8 }]}>
+        <View style={s.profileContainer}>
+          <View style={s.avatarCircle}>
+            <Ionicons name="person" size={20} color={TEXT_SECONDARY} />
+          </View>
+          <Text style={s.appTitle}>Calora</Text>
+        </View>
+        <View style={s.streakBadge}>
+          <Text style={s.streakText}>{streak} 🔥</Text>
+        </View>
+      </View>
+
       <ScrollView
         style={{ flex: 1, backgroundColor: BG }}
         contentContainerStyle={[
           s.container,
-          { paddingTop: insets.top + 16, paddingBottom: TAB_BAR_CLEARANCE + 90 },
+          { paddingBottom: TAB_BAR_CLEARANCE + 100 },
         ]}
         refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={ACCENT} />
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={TEXT_PRIMARY} />
         }
         showsVerticalScrollIndicator={false}
       >
-        {/* Header (Greeting & Streak) */}
-        <View style={s.header}>
-          <View style={{ flex: 1 }}>
-            <Text style={s.greeting}>
-              {greeting}, {(profile?.fullName ?? '').split(' ')[0] || 'User'}
-            </Text>
-            <Text style={s.subGreeting}>Let's hit your nutritional goals.</Text>
-          </View>
-          <View style={s.streakBadge}>
-            <Text style={{ fontSize: 16 }}>🔥</Text>
-            <Text style={s.streakText}>{streak} Day{streak !== 1 ? 's' : ''}</Text>
-          </View>
+        {/* Weekly Calendar Strip */}
+        <View style={s.calendarStrip}>
+          {calendarWeek.map((dateItem, idx) => {
+            const isSelected = getLocalDateString(dateItem) === dateString
+            const isToday = getLocalDateString(dateItem) === getLocalDateString(new Date())
+            const dayLabel = weekdays[dateItem.getDay()]
+            const dateNum = dateItem.getDate()
+
+            return (
+              <Pressable
+                key={idx}
+                onPress={() => setSelectedDate(dateItem)}
+                style={s.calendarDayCol}
+              >
+                <Text style={[s.calendarDayLabel, isSelected && s.calendarDayLabelActive]}>
+                  {dayLabel}
+                </Text>
+                <View
+                  style={[
+                    s.calendarDateCircle,
+                    isSelected && s.calendarDateCircleActive,
+                    !isSelected && isToday && s.calendarDateCircleToday,
+                  ]}
+                >
+                  <Text style={[s.calendarDateText, isSelected && s.calendarDateTextActive]}>
+                    {dateNum}
+                  </Text>
+                </View>
+              </Pressable>
+            )
+          })}
         </View>
 
-        {/* Date Selector Slider */}
-        <View style={s.dateSlider}>
-          <Pressable onPress={() => changeDate(-1)} style={s.arrowBtn}>
-            <Ionicons name="chevron-back" size={20} color={TEXT_SECONDARY} />
-          </Pressable>
-          <Text style={s.dateText}>{dateLabel}</Text>
-          <Pressable onPress={() => changeDate(1)} style={s.arrowBtn}>
-            <Ionicons name="chevron-forward" size={20} color={TEXT_SECONDARY} />
-          </Pressable>
-        </View>
+        {/* Main Calorie Progress Ring Card */}
+        <Card style={s.calorieCard}>
+          <View style={s.calorieMain}>
+            <View>
+              <View style={s.calorieNumberRow}>
+                <Text style={s.calorieTotalText}>{totals.calories}</Text>
+                <Text style={s.calorieGoalText}>/{calorieGoal}</Text>
+              </View>
+              <Text style={s.calorieSubtitle}>Calories eaten</Text>
+            </View>
 
-        {/* Calorie Goal Visual Summary */}
-        <Card style={s.summaryCard}>
-          <View style={s.summaryMain}>
             {/* SVG Progress Circle */}
-            <View style={s.circleContainer}>
+            <View style={{ width: ringSize, height: ringSize }}>
               <Svg width={ringSize} height={ringSize} style={s.svgRing}>
-                {/* Background path */}
+                {/* Background track */}
                 <Circle
                   cx={ringSize / 2}
                   cy={ringSize / 2}
                   r={radius}
-                  stroke="rgba(255,255,255,0.05)"
+                  stroke="rgba(0,0,0,0.05)"
                   strokeWidth={strokeWidth}
                   fill="transparent"
                 />
@@ -214,7 +239,7 @@ export default function HomeScreen() {
                   cx={ringSize / 2}
                   cy={ringSize / 2}
                   r={radius}
-                  stroke={ACCENT}
+                  stroke={TEXT_PRIMARY}
                   strokeWidth={strokeWidth}
                   fill="transparent"
                   strokeDasharray={circumference}
@@ -222,362 +247,545 @@ export default function HomeScreen() {
                   strokeLinecap="round"
                 />
               </Svg>
-              {/* Central Text */}
-              <View style={s.centerTextWrapper}>
-                <Text style={s.centerNumber}>
-                  {remainingCalories >= 0 ? remainingCalories : Math.abs(remainingCalories)}
-                </Text>
-                <Text style={s.centerLabel}>
-                  {remainingCalories >= 0 ? 'kcal left' : 'kcal over'}
-                </Text>
+              <View style={s.circleCenterIcon}>
+                <Ionicons name="flame" size={24} color={ENERGY_ORANGE} style={{ marginTop: 2 }} />
               </View>
             </View>
-
-            {/* Side Calories Details */}
-            <View style={s.metricsTextSide}>
-              <View style={s.metricSideRow}>
-                <View style={[s.metricSideDot, { backgroundColor: ACCENT }]} />
-                <View>
-                  <Text style={s.metricSideLabel}>Goal</Text>
-                  <Text style={s.metricSideVal}>{calorieGoal} kcal</Text>
-                </View>
-              </View>
-
-              <View style={s.metricSideRow}>
-                <View style={[s.metricSideDot, { backgroundColor: 'rgba(255,255,255,0.4)' }]} />
-                <View>
-                  <Text style={s.metricSideLabel}>Logged</Text>
-                  <Text style={s.metricSideVal}>{totals.calories} kcal</Text>
-                </View>
-              </View>
-            </View>
-          </View>
-
-          {/* Divider */}
-          <View style={s.divider} />
-
-          {/* Macro Progress Bars */}
-          <View style={s.macrosContainer}>
-            {/* Protein */}
-            <MacroProgress
-              name="Protein"
-              value={totals.protein}
-              goal={proteinGoal}
-              color="#10b981"
-              unit="g"
-            />
-            {/* Carbs */}
-            <MacroProgress
-              name="Carbs"
-              value={totals.carbs}
-              goal={carbsGoal}
-              color="#fbbf24"
-              unit="g"
-            />
-            {/* Fat */}
-            <MacroProgress
-              name="Fat"
-              value={totals.fat}
-              goal={fatGoal}
-              color="#f87171"
-              unit="g"
-            />
           </View>
         </Card>
 
-        {/* Categorized Food Diary */}
-        <View style={s.diaryHeaderWrap}>
-          <Text style={s.sectionTitle}>Food Diary</Text>
+        {/* Macros Grid */}
+        <View style={s.macrosGrid}>
+          {/* Protein Card */}
+          <View style={s.macroCard}>
+            <MacroProgressRing
+              value={totals.protein}
+              goal={proteinGoal}
+              color={SUCCESS}
+              iconName="barbell"
+            />
+            <Text style={s.macroQtyText}>
+              {totals.protein}
+              <Text style={s.macroGoalQtyText}>/{proteinGoal}g</Text>
+            </Text>
+            <Text style={s.macroSubtitle}>Protein eaten</Text>
+          </View>
+
+          {/* Carbs Card */}
+          <View style={s.macroCard}>
+            <MacroProgressRing
+              value={totals.carbs}
+              goal={carbsGoal}
+              color={CARBS}
+              iconName="pizza"
+            />
+            <Text style={s.macroQtyText}>
+              {totals.carbs}
+              <Text style={s.macroGoalQtyText}>/{carbsGoal}g</Text>
+            </Text>
+            <Text style={s.macroSubtitle}>Carbs eaten</Text>
+          </View>
+
+          {/* Fat Card */}
+          <View style={s.macroCard}>
+            <MacroProgressRing
+              value={totals.fat}
+              goal={fatGoal}
+              color={WARNING}
+              iconName="water"
+            />
+            <Text style={s.macroQtyText}>
+              {totals.fat}
+              <Text style={s.macroGoalQtyText}>/{fatGoal}g</Text>
+            </Text>
+            <Text style={s.macroSubtitle}>Fat eaten</Text>
+          </View>
         </View>
 
-        {(['breakfast', 'lunch', 'dinner', 'snack'] as MealType[]).map((type) => {
-          const typeMeals = categorizedMeals[type]
-          const typeCalories = typeMeals.reduce((sum, m) => sum + m.calories, 0)
+        {/* Recently Uploaded Feed Section */}
+        <View style={s.sectionHeader}>
+          <Text style={s.sectionTitle}>Recently uploaded</Text>
+          <Pressable onPress={() => {}} hitSlop={8}>
+            <Text style={s.sectionActionText}>See all</Text>
+          </Pressable>
+        </View>
 
-          return (
-            <View key={type} style={s.mealSection}>
-              <View style={s.mealSectionHeader}>
-                <View>
-                  <Text style={s.mealTypeName}>{type.charAt(0).toUpperCase() + type.slice(1)}</Text>
-                  <Text style={s.mealTypeCalories}>{typeCalories} kcal</Text>
-                </View>
-                <Pressable
-                  onPress={() => router.push(`/scan?mealType=${type}`)}
-                  style={({ pressed }) => [s.addMealBtn, pressed && { opacity: 0.7 }]}
-                >
-                  <Ionicons name="add" size={16} color={ACCENT} />
-                  <Text style={s.addMealBtnText}>Log</Text>
-                </Pressable>
-              </View>
-
-              <Card compact style={s.mealSectionCard}>
-                {typeMeals.length === 0 ? (
-                  <Pressable
-                    onPress={() => router.push(`/scan?mealType=${type}`)}
-                    style={s.emptyMealState}
-                  >
-                    <Text style={s.emptyMealText}>No food logged for {type}. Tap to scan.</Text>
-                  </Pressable>
+        {meals.length === 0 ? (
+          <Card style={s.emptyStateCard}>
+            <Ionicons name="restaurant-outline" size={32} color={TEXT_TERTIARY} />
+            <Text style={s.emptyStateText}>No food logs recorded for this day.</Text>
+            <Pressable
+              onPress={() => router.push('/scan')}
+              style={({ pressed }) => [s.emptyStateBtn, pressed && { opacity: 0.85 }]}
+            >
+              <Text style={s.emptyStateBtnText}>Log First Meal</Text>
+            </Pressable>
+          </Card>
+        ) : (
+          <View style={s.mealsList}>
+            {meals.slice().reverse().map((meal, index) => (
+              <Pressable
+                key={meal.id}
+                onPress={() => router.push(`/detail/${meal.id}`)}
+                style={({ pressed }) => [
+                  s.recentMealCard,
+                  pressed && { transform: [{ scale: 0.99 }], opacity: 0.95 },
+                ]}
+              >
+                {meal.imageUrl ? (
+                  <Image source={{ uri: meal.imageUrl }} style={s.recentMealImage} />
                 ) : (
-                  typeMeals.map((meal, index) => (
-                    <View
-                      key={meal.id}
-                      style={[
-                        s.mealRow,
-                        index < typeMeals.length - 1 && s.mealRowDivider,
-                      ]}
-                    >
-                      {meal.imageUrl ? (
-                        <Image source={{ uri: meal.imageUrl }} style={s.mealImage} />
-                      ) : (
-                        <View style={s.mealImageFallback}>
-                          <Ionicons name="restaurant-outline" size={16} color={TEXT_TERTIARY} />
-                        </View>
-                      )}
-                      <View style={s.mealInfo}>
-                        <Text style={s.mealName} numberOfLines={1}>{meal.name}</Text>
-                        <Text style={s.mealMacros}>
-                          P: {meal.protein}g · C: {meal.carbs}g · F: {meal.fat}g
-                        </Text>
-                      </View>
-                      <Text style={s.mealCaloriesText}>{meal.calories} kcal</Text>
-                      <Pressable
-                        onPress={() => handleDelete(meal.id)}
-                        hitSlop={12}
-                        style={({ pressed }) => [s.deleteBtn, pressed && { opacity: 0.6 }]}
-                      >
-                        <Ionicons name="trash-outline" size={15} color="rgba(248,113,113,0.7)" />
-                      </Pressable>
-                    </View>
-                  ))
+                  <View style={s.recentMealImageFallback}>
+                    <Ionicons name="restaurant-outline" size={24} color={TEXT_TERTIARY} />
+                  </View>
                 )}
-              </Card>
-            </View>
-          )
-        })}
+
+                <View style={s.recentMealContent}>
+                  <View style={s.recentMealTopRow}>
+                    <Text style={s.recentMealName} numberOfLines={1}>
+                      {meal.name}
+                    </Text>
+                    <Text style={s.recentMealTime}>{formatTime(meal.loggedAt)}</Text>
+                  </View>
+
+                  <View style={s.recentMealCalorieRow}>
+                    <Ionicons name="flame" size={14} color={ENERGY_ORANGE} />
+                    <Text style={s.recentMealCalorieText}>{meal.calories} Calories</Text>
+                  </View>
+
+                  <View style={s.recentMealMacrosRow}>
+                    <View style={s.recentMealMacroItem}>
+                      <View style={[s.macroDot, { backgroundColor: SUCCESS }]} />
+                      <Text style={s.recentMealMacroText}>{meal.protein}g</Text>
+                    </View>
+                    <View style={s.recentMealMacroItem}>
+                      <View style={[s.macroDot, { backgroundColor: CARBS }]} />
+                      <Text style={s.recentMealMacroText}>{meal.carbs}g</Text>
+                    </View>
+                    <View style={s.recentMealMacroItem}>
+                      <View style={[s.macroDot, { backgroundColor: WARNING }]} />
+                      <Text style={s.recentMealMacroText}>{meal.fat}g</Text>
+                    </View>
+                  </View>
+                </View>
+
+                {/* Trash delete button */}
+                <Pressable
+                  onPress={(e) => {
+                    e.stopPropagation()
+                    handleDelete(meal.id)
+                  }}
+                  hitSlop={12}
+                  style={({ pressed }) => [s.recentMealDeleteBtn, pressed && { opacity: 0.6 }]}
+                >
+                  <Ionicons name="trash-outline" size={16} color={STREAK_RED} />
+                </Pressable>
+              </Pressable>
+            ))}
+          </View>
+        )}
       </ScrollView>
 
-      {/* Floating Action Button (FAB) for scanning */}
-      <View style={[s.fabContainer, { bottom: insets.bottom + TAB_BAR_CLEARANCE + 16 }]}>
+      {/* FAB: Log Food (+) */}
+      <View style={[s.fabContainer, { bottom: insets.bottom + 24 }]}>
         <Pressable
           onPress={() => router.push('/scan')}
-          style={({ pressed }) => [s.fab, pressed && { opacity: 0.9, transform: [{ scale: 0.96 }] }]}
+          style={({ pressed }) => [s.fab, pressed && { transform: [{ scale: 0.92 }] }]}
         >
-          <LinearGradient
-            colors={[ACCENT, '#059669']}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-            style={s.fabGradient}
-          >
-            <Ionicons name="camera" size={22} color="#fff" />
-            <Text style={s.fabText}>Scan Meal</Text>
-          </LinearGradient>
+          <Ionicons name="add" size={28} color="#fff" />
         </Pressable>
       </View>
     </View>
   )
 }
 
-function MacroProgress({
-  name,
+function MacroProgressRing({
   value,
   goal,
   color,
-  unit = 'g',
+  iconName,
+  size = 48,
+  strokeWidth = 4.5,
 }: {
-  name: string
   value: number
   goal: number
   color: string
-  unit?: string
+  iconName: keyof typeof Ionicons.glyphMap
+  size?: number
+  strokeWidth?: number
 }) {
-  const pct = Math.min(1, value / goal)
+  const radius = (size - strokeWidth) / 2
+  const circumference = radius * 2 * Math.PI
+  const progressRatio = goal > 0 ? value / goal : 0
+  const strokeDashoffset = circumference - Math.min(1, progressRatio) * circumference
+
   return (
-    <View style={s.macroCol}>
-      <View style={s.macroLabelRow}>
-        <Text style={s.macroName}>{name}</Text>
-        <Text style={s.macroQty}>
-          {value}
-          <Text style={{ color: TEXT_TERTIARY }}>/{goal}{unit}</Text>
-        </Text>
-      </View>
-      <View style={s.progressBarBg}>
-        <View
-          style={[
-            s.progressBarFill,
-            { backgroundColor: color, width: `${pct * 100}%` },
-          ]}
+    <View style={{ width: size, height: size, alignItems: 'center', justifyContent: 'center', marginBottom: 8 }}>
+      <Svg width={size} height={size} style={{ position: 'absolute', transform: [{ rotate: '-90deg' }] }}>
+        {/* Track */}
+        <Circle
+          cx={size / 2}
+          cy={size / 2}
+          r={radius}
+          stroke="rgba(0,0,0,0.04)"
+          strokeWidth={strokeWidth}
+          fill="transparent"
         />
-      </View>
+        {/* Progress */}
+        <Circle
+          cx={size / 2}
+          cy={size / 2}
+          r={radius}
+          stroke={color}
+          strokeWidth={strokeWidth}
+          fill="transparent"
+          strokeDasharray={circumference}
+          strokeDashoffset={strokeDashoffset}
+          strokeLinecap="round"
+        />
+      </Svg>
+      <Ionicons name={iconName} size={size * 0.4} color={color} />
     </View>
   )
 }
 
 const s = StyleSheet.create({
   root: { flex: 1, backgroundColor: BG },
-  container: { paddingHorizontal: 16, gap: 16 },
-  header: {
+  container: { paddingHorizontal: 20, gap: 20, paddingTop: 12 },
+  appHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 4,
+    paddingHorizontal: 20,
+    paddingBottom: 10,
+    backgroundColor: BG,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: BORDER,
   },
-  greeting: { fontSize: 24, fontWeight: '800', color: '#fff', letterSpacing: -0.5 },
-  subGreeting: { fontSize: 13, color: TEXT_SECONDARY, marginTop: 1 },
-  streakBadge: {
+  profileContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
+    gap: 12,
+  },
+  avatarCircle: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     backgroundColor: SURFACE2,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: BORDER,
+  },
+  appTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: TEXT_PRIMARY,
+    letterSpacing: -0.4,
+  },
+  streakBadge: {
+    backgroundColor: SURFACE2,
+    paddingHorizontal: 12,
+    paddingVertical: 5,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: BORDER,
+  },
+  streakText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: TEXT_PRIMARY,
+  },
+
+  // Calendar Strip
+  calendarStrip: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    backgroundColor: SURFACE,
+    padding: 12,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: BORDER,
+    elevation: 1,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.03,
+    shadowRadius: 6,
+  },
+  calendarDayCol: {
+    alignItems: 'center',
+    flex: 1,
+    gap: 6,
+  },
+  calendarDayLabel: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: TEXT_SECONDARY,
+  },
+  calendarDayLabelActive: {
+    color: TEXT_PRIMARY,
+    fontWeight: '700',
+  },
+  calendarDateCircle: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  calendarDateCircleActive: {
+    backgroundColor: TEXT_PRIMARY,
+  },
+  calendarDateCircleToday: {
+    borderWidth: 1,
+    borderColor: TEXT_PRIMARY,
+  },
+  calendarDateText: {
+    fontSize: 13,
+    fontWeight: '500',
+    color: TEXT_PRIMARY,
+  },
+  calendarDateTextActive: {
+    color: '#fff',
+    fontWeight: '700',
+  },
+
+  // Calorie Progress Ring Card
+  calorieCard: {
+    padding: 20,
+    borderRadius: 20,
+    elevation: 1,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.03,
+    shadowRadius: 10,
+  },
+  calorieMain: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  calorieNumberRow: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+  },
+  calorieTotalText: {
+    fontSize: 36,
+    fontWeight: '700',
+    color: TEXT_PRIMARY,
+    letterSpacing: -0.8,
+  },
+  calorieGoalText: {
+    fontSize: 18,
+    fontWeight: '500',
+    color: TEXT_SECONDARY,
+  },
+  calorieSubtitle: {
+    fontSize: 14,
+    color: TEXT_SECONDARY,
+    marginTop: 2,
+  },
+  svgRing: {
+    position: 'absolute',
+    transform: [{ rotate: '-90deg' }],
+  },
+  circleCenterIcon: {
+    position: 'absolute',
+    inset: 0,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
+  // Macros Grid
+  macrosGrid: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  macroCard: {
+    flex: 1,
+    backgroundColor: SURFACE,
+    borderWidth: 1,
+    borderColor: BORDER,
+    borderRadius: 16,
+    paddingVertical: 16,
+    paddingHorizontal: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+    elevation: 1,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.02,
+    shadowRadius: 4,
+  },
+  macroQtyText: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: TEXT_PRIMARY,
+  },
+  macroGoalQtyText: {
+    fontSize: 10.5,
+    fontWeight: '500',
+    color: TEXT_SECONDARY,
+  },
+  macroSubtitle: {
+    fontSize: 10.5,
+    color: TEXT_SECONDARY,
+    marginTop: 3,
+    fontWeight: '500',
+  },
+
+  // Recently Uploaded Feed
+  sectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginTop: 4,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: TEXT_PRIMARY,
+    letterSpacing: -0.4,
+  },
+  sectionActionText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: TEXT_SECONDARY,
+  },
+  emptyStateCard: {
+    paddingVertical: 32,
+    paddingHorizontal: 20,
+    alignItems: 'center',
+    gap: 12,
+  },
+  emptyStateText: {
+    fontSize: 13.5,
+    color: TEXT_SECONDARY,
+    textAlign: 'center',
+  },
+  emptyStateBtn: {
+    backgroundColor: TEXT_PRIMARY,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+    marginTop: 4,
+  },
+  emptyStateBtnText: {
+    fontSize: 12.5,
+    fontWeight: '600',
+    color: '#fff',
+  },
+  mealsList: {
+    gap: 12,
+  },
+  recentMealCard: {
+    flexDirection: 'row',
+    backgroundColor: SURFACE,
     borderWidth: 1,
     borderColor: BORDER,
     borderRadius: 20,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-  },
-  streakText: { fontSize: 12, fontWeight: '700', color: '#fff' },
-
-  // Date Slider
-  dateSlider: {
-    flexDirection: 'row',
+    padding: 12,
     alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: SURFACE,
-    borderColor: BORDER,
-    borderWidth: 1,
-    borderRadius: 12,
-    paddingVertical: 10,
-    paddingHorizontal: 8,
+    gap: 14,
+    elevation: 1,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.02,
+    shadowRadius: 6,
   },
-  arrowBtn: {
-    width: 32,
-    height: 32,
-    borderRadius: 8,
+  recentMealImage: {
+    width: 72,
+    height: 72,
+    borderRadius: 12,
+    backgroundColor: SURFACE2,
+  },
+  recentMealImageFallback: {
+    width: 72,
+    height: 72,
+    borderRadius: 12,
+    backgroundColor: SURFACE2,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: 'rgba(255,255,255,0.03)',
+    borderWidth: 1,
+    borderColor: BORDER,
   },
-  dateText: { fontSize: 14.5, fontWeight: '700', color: '#fff' },
-
-  // Calorie Visual Card
-  summaryCard: { padding: 18, gap: 16 },
-  summaryMain: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-around' },
-  circleContainer: { width: 140, height: 140, alignItems: 'center', justifyContent: 'center' },
-  svgRing: { position: 'absolute', transform: [{ rotate: '-90deg' }] },
-  centerTextWrapper: { alignItems: 'center', justifyContent: 'center' },
-  centerNumber: { fontSize: 24, fontWeight: '800', color: '#fff', letterSpacing: -0.5 },
-  centerLabel: { fontSize: 11, color: TEXT_SECONDARY, marginTop: 2, fontWeight: '500' },
-  metricsTextSide: { gap: 16 },
-  metricSideRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  metricSideDot: { width: 8, height: 8, borderRadius: 4 },
-  metricSideLabel: { fontSize: 11, color: TEXT_TERTIARY, fontWeight: '600', textTransform: 'uppercase' },
-  metricSideVal: { fontSize: 15, fontWeight: '700', color: '#fff', marginTop: 1 },
-
-  divider: { height: 1, backgroundColor: BORDER },
-
-  // Macro Progress Lines
-  macrosContainer: { gap: 12 },
-  macroCol: { gap: 6 },
-  macroLabelRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  macroName: { fontSize: 13, fontWeight: '600', color: '#fff' },
-  macroQty: { fontSize: 12, fontWeight: '600', color: '#fff' },
-  progressBarBg: { height: 6, backgroundColor: 'rgba(255,255,255,0.05)', borderRadius: 3, overflow: 'hidden' },
-  progressBarFill: { height: '100%', borderRadius: 3 },
-
-  // Food Diary Sections
-  diaryHeaderWrap: { marginTop: 8 },
-  sectionTitle: {
-    fontSize: 16,
-    fontWeight: '800',
-    color: '#fff',
-    letterSpacing: -0.3,
+  recentMealContent: {
+    flex: 1,
+    gap: 4,
   },
-  mealSection: { gap: 10, marginTop: 4 },
-  mealSectionHeader: {
+  recentMealTopRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 4,
   },
-  mealTypeName: { fontSize: 15, fontWeight: '700', color: '#fff' },
-  mealTypeCalories: { fontSize: 12, color: TEXT_SECONDARY, marginTop: 1 },
-  addMealBtn: {
+  recentMealName: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: TEXT_PRIMARY,
+    maxWidth: SW * 0.4,
+  },
+  recentMealTime: {
+    fontSize: 11,
+    color: TEXT_SECONDARY,
+    fontWeight: '500',
+  },
+  recentMealCalorieRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-    backgroundColor: ACCENT_DIM,
-    borderColor: ACCENT_BORDER,
-    borderWidth: 1,
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 8,
   },
-  addMealBtnText: { color: ACCENT, fontSize: 12, fontWeight: '600' },
-  mealSectionCard: { padding: 0, overflow: 'hidden' },
-  emptyMealState: { paddingVertical: 18, alignItems: 'center', justifyContent: 'center' },
-  emptyMealText: { fontSize: 12, color: TEXT_TERTIARY, fontWeight: '500' },
-
-  // Meal Logs Rows
-  mealRow: {
+  recentMealCalorieText: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: ENERGY_ORANGE,
+  },
+  recentMealMacrosRow: {
+    flexDirection: 'row',
+    gap: 10,
+    marginTop: 2,
+  },
+  recentMealMacroItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    gap: 12,
+    gap: 4,
   },
-  mealRowDivider: { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: BORDER },
-  mealImage: { width: 38, height: 38, borderRadius: 8, backgroundColor: SURFACE2 },
-  mealImageFallback: {
-    width: 38,
-    height: 38,
-    borderRadius: 8,
-    backgroundColor: 'rgba(255,255,255,0.03)',
+  macroDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+  },
+  recentMealMacroText: {
+    fontSize: 11,
+    color: TEXT_SECONDARY,
+    fontWeight: '500',
+  },
+  recentMealDeleteBtn: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: 'rgba(255,59,48,0.05)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,59,48,0.12)',
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: BORDER,
-  },
-  mealInfo: { flex: 1, gap: 3 },
-  mealName: { fontSize: 14, fontWeight: '600', color: '#fff' },
-  mealMacros: { fontSize: 11, color: TEXT_SECONDARY },
-  mealCaloriesText: { fontSize: 13.5, fontWeight: '700', color: '#fff' },
-  deleteBtn: {
-    width: 26,
-    height: 26,
-    borderRadius: 6,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: 'rgba(248,113,113,0.06)',
-    borderWidth: 1,
-    borderColor: 'rgba(248,113,113,0.12)',
   },
 
   // FAB button
   fabContainer: {
     position: 'absolute',
-    right: 16,
+    right: 20,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.35,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.25,
     shadowRadius: 10,
     elevation: 8,
   },
   fab: {
-    borderRadius: 24,
-    overflow: 'hidden',
-  },
-  fabGradient: {
-    height: 48,
-    flexDirection: 'row',
+    width: 54,
+    height: 54,
+    borderRadius: 27,
+    backgroundColor: '#000000',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: 18,
-    gap: 8,
-  },
-  fabText: {
-    color: '#fff',
-    fontSize: 14,
-    fontWeight: '700',
   },
 })
-

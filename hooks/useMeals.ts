@@ -193,6 +193,91 @@ export function useDeleteMeal(dateString: string) {
   })
 }
 
+export function useMeal(mealId: string) {
+  return useQuery<MealLog | null>({
+    queryKey: ['meal', mealId],
+    queryFn: async () => {
+      if (isSupabaseEnabled) {
+        const { data, error } = await supabase
+          .from('meal_logs')
+          .select('*')
+          .eq('id', mealId)
+          .maybeSingle()
+
+        if (error) {
+          console.error('Error fetching meal by ID from Supabase:', error)
+        } else if (data) {
+          return {
+            id: data.id,
+            userId: data.user_id,
+            name: data.name,
+            calories: data.calories,
+            protein: data.protein,
+            carbs: data.carbs,
+            fat: data.fat,
+            mealType: data.meal_type as MealType,
+            imageUrl: data.image_url,
+            loggedAt: data.logged_at,
+          }
+        }
+      }
+
+      // Offline / local fallback
+      const allMeals = await getLocalMeals()
+      return allMeals.find((m) => m.id === mealId) ?? null
+    },
+  })
+}
+
+export function useUpdateMeal(dateString: string) {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async (updatedMeal: MealLog) => {
+      if (isSupabaseEnabled) {
+        const { data: { session } } = await supabase.auth.getSession()
+        if (session?.user) {
+          const { error } = await supabase
+            .from('meal_logs')
+            .update({
+              name: updatedMeal.name,
+              calories: updatedMeal.calories,
+              protein: updatedMeal.protein,
+              carbs: updatedMeal.carbs,
+              fat: updatedMeal.fat,
+              meal_type: updatedMeal.mealType,
+              image_url: updatedMeal.imageUrl,
+              logged_at: updatedMeal.loggedAt,
+            })
+            .eq('id', updatedMeal.id)
+            .eq('user_id', session.user.id)
+
+          if (error) {
+            console.error('Error updating meal in Supabase:', error)
+          } else {
+            return updatedMeal
+          }
+        }
+      }
+
+      // Local save
+      const allMeals = await getLocalMeals()
+      const idx = allMeals.findIndex((m) => m.id === updatedMeal.id)
+      if (idx !== -1) {
+        allMeals[idx] = updatedMeal
+        await saveLocalMeals(allMeals)
+      }
+      return updatedMeal
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['meals', dateString] })
+      queryClient.invalidateQueries({ queryKey: ['meal', data.id] })
+      queryClient.invalidateQueries({ queryKey: ['meals-weekly'] })
+      queryClient.invalidateQueries({ queryKey: ['meals-all'] })
+    },
+  })
+}
+
 // Hook to fetch weekly meals summary
 export function useWeeklyMeals() {
   return useQuery({
