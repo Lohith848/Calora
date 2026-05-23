@@ -19,3 +19,9 @@ web-build/
 npm-debug.*
 yarn-debug.*
 yarn-error.*
+
+# Antigravity system files
+.antigravity/
+.build-outputs/
+metadata.json
+

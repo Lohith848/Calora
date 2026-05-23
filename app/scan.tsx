@@ -311,7 +311,7 @@ export default function ScanScreen() {
 
             <View style={s.scanningStatusBox}>
               <ActivityIndicator size="small" color={ACCENT} />
-              <Text style={s.scanningStatusTitle}>NutriAI is scanning food...</Text>
+              <Text style={s.scanningStatusTitle}>Calora is scanning food...</Text>
               <Text style={s.scanningStatusSub}>Estimating weight, calories, and macronutrients.</Text>
             </View>
           </View>

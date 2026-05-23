@@ -17,7 +17,7 @@ export interface MealLog {
   loggedAt: string // ISO string
 }
 
-const LOCAL_MEALS_KEY = '@nutriai_meals'
+const LOCAL_MEALS_KEY = '@calora_meals'
 
 // Helper to get local meals
 async function getLocalMeals(): Promise<MealLog[]> {

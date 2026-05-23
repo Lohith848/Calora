@@ -1,10 +1,10 @@
 {
   "expo": {
-    "name": "NutriAI",
-    "slug": "nutriai-app",
+    "name": "Calora",
+    "slug": "calora-app",
     "version": "1.0.0",
     "orientation": "portrait",
-    "scheme": "nutriai",
+    "scheme": "calora",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "dark",
     "splash": {
@@ -14,13 +14,13 @@
     },
     "ios": {
       "supportsTablet": false,
-      "bundleIdentifier": "com.yourcompany.nutriai",
+      "bundleIdentifier": "com.yourcompany.calora",
       "associatedDomains": [
         "applinks:REPLACE_WITH_YOUR_DOMAIN"
       ]
     },
     "android": {
-      "package": "com.yourcompany.nutriai",
+      "package": "com.yourcompany.calora",
       "adaptiveIcon": {
         "foregroundImage": "./assets/icon.png",
         "backgroundColor": "#0d0d0d"
@@ -41,7 +41,7 @@
           "action": "VIEW",
           "autoVerify": true,
           "data": [
-            { "scheme": "nutriai" }
+            { "scheme": "calora" }
           ],
           "category": ["BROWSABLE", "DEFAULT"]
         }

@@ -16,7 +16,7 @@ export function useProfile() {
         queryKey: ['profile'],
         queryFn: async () => {
             let fullName = 'Health Enthusiast'
-            let email = 'offline@nutriai.app'
+            let email = 'offline@calora.app'
             let planType: 'free' | 'premium' = 'free'
 
             if (isSupabaseEnabled) {
@@ -44,7 +44,7 @@ export function useProfile() {
 
             // If we are offline or Supabase returned defaults, try to load offline-saved name
             if (fullName === 'Health Enthusiast' || fullName === 'User') {
-                const localName = await AsyncStorage.getItem('@nutriai_profile_name')
+                const localName = await AsyncStorage.getItem('@calora_profile_name')
                 if (localName) {
                     fullName = localName
                 }

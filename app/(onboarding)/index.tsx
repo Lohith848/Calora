@@ -51,8 +51,8 @@ export default function OnboardingScreen() {
     }
 
     try {
-      await AsyncStorage.setItem('@nutriai_goals', JSON.stringify(baseGoals))
-      await AsyncStorage.setItem('@nutriai_profile_name', cleanName)
+      await AsyncStorage.setItem('@calora_goals', JSON.stringify(baseGoals))
+      await AsyncStorage.setItem('@calora_profile_name', cleanName)
     } catch (e) {
       console.error('Failed to save onboarding goals & profile:', e)
     }

@@ -3,7 +3,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage'
 import { supabase, isSupabaseEnabled } from '@/lib/supabase'
 import { type MealLog } from './useMeals'
 
-const LOCAL_MEALS_KEY = '@nutriai_meals'
+const LOCAL_MEALS_KEY = '@calora_meals'
 
 export function useStreak() {
   return useQuery<number>({

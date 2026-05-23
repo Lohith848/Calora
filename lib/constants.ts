@@ -11,16 +11,16 @@
  */
 
 /** Display name shown in headers, onboarding, and the landing page. */
-export const APP_NAME = 'NutriAI'
+export const APP_NAME = 'Calora'
 
 /** URL scheme matching expo.scheme in app.json — used for OAuth deep link callbacks. */
-export const APP_SCHEME = 'nutriai'
+export const APP_SCHEME = 'calora'
 
 /** Support email shown on the Support screen. */
-export const APP_SUPPORT_EMAIL = 'support@nutriai.app'
+export const APP_SUPPORT_EMAIL = 'support@calora.app'
 
 /** Documentation URL shown on the Support screen. */
-export const APP_DOCS_URL = 'https://nutriai.app/docs'
+export const APP_DOCS_URL = 'https://calora.app/docs'
 
 /** One-liner shown on the landing page below the app name. */
 export const APP_TAGLINE = 'Track Calories & Macros with AI'

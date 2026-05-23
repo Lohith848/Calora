@@ -9,7 +9,7 @@ export interface DailyGoals {
   fat: number
 }
 
-const LOCAL_GOALS_KEY = '@nutriai_goals'
+const LOCAL_GOALS_KEY = '@calora_goals'
 
 const DEFAULT_GOALS: DailyGoals = {
   calories: 2000,
