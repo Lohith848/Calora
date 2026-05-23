@@ -7,9 +7,7 @@ import Animated, {
 import { useEffect } from 'react'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Text } from './Text'
-import { SURFACE, BORDER, TEXT_PRIMARY, TEXT_SECONDARY, ERROR } from '@/lib/theme'
-
-// ─── Types ────────────────────────────────────────────────────────────────────
+import { SURFACE_ELEVATED, BORDER, TEXT_PRIMARY, TEXT_SECONDARY, ERROR, SURFACE_CONTAINER_LOW, SHADOW_LG } from '@/lib/theme'
 
 export type AlertButton = {
   text:    string
@@ -37,8 +35,6 @@ type SheetModalProps = {
   options:   SheetOption[]
   onDismiss: () => void
 }
-
-// ─── Alert Modal (slides from bottom) ─────────────────────────────────────────
 
 export function AlertModal({
   visible, title, message, buttons = [{ text: 'OK' }], onDismiss,
@@ -117,8 +113,6 @@ export function AlertModal({
   )
 }
 
-// ─── Action Sheet (slides from bottom, option list) ───────────────────────────
-
 export function ActionSheet({ visible, title, options, onDismiss }: SheetModalProps) {
   const insets          = useSafeAreaInsets()
   const translateY      = useSharedValue(300)
@@ -177,16 +171,14 @@ export function ActionSheet({ visible, title, options, onDismiss }: SheetModalPr
   )
 }
 
-// ─── Styles ───────────────────────────────────────────────────────────────────
-
 const s = StyleSheet.create({
   backdrop: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0,0,0,0.55)',
+    backgroundColor: 'rgba(0,0,0,0.45)',
   },
   container: { flex: 1, justifyContent: 'flex-end' },
   sheet: {
-    backgroundColor: SURFACE,
+    backgroundColor: SURFACE_ELEVATED,
     borderTopLeftRadius: 28,
     borderTopRightRadius: 28,
     borderTopWidth: 1,
@@ -196,13 +188,14 @@ const s = StyleSheet.create({
     paddingTop: 12,
     paddingHorizontal: 16,
     gap: 10,
+    ...SHADOW_LG,
   },
   handle: {
     alignSelf: 'center',
     width: 36,
     height: 4,
     borderRadius: 2,
-    backgroundColor: 'rgba(255,255,255,0.18)',
+    backgroundColor: '#cfc4c5',
     marginBottom: 4,
   },
   content: {
@@ -219,13 +212,13 @@ const s = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 15,
     borderRadius: 16,
-    backgroundColor: 'rgba(255,255,255,0.08)',
+    backgroundColor: SURFACE_CONTAINER_LOW,
     borderWidth: 1,
     borderColor: BORDER,
   },
   btnDestructive: {
-    backgroundColor: 'rgba(248,113,113,0.1)',
-    borderColor: 'rgba(248,113,113,0.22)',
+    backgroundColor: 'rgba(186,26,26,0.08)',
+    borderColor: 'rgba(186,26,26,0.15)',
   },
   btnPressed:           { opacity: 0.6 },
   btnText:              { color: TEXT_PRIMARY, fontSize: 16, fontWeight: '600' },
@@ -236,19 +229,18 @@ const s = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 15,
     borderRadius: 16,
-    backgroundColor: 'rgba(255,255,255,0.04)',
+    backgroundColor: SURFACE_CONTAINER_LOW,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.06)',
+    borderColor: BORDER,
   },
   cancelText: { color: TEXT_SECONDARY, fontSize: 16, fontWeight: '600' },
 
-  // ActionSheet-specific
   sheetTitle: {
     color: TEXT_SECONDARY, fontSize: 12, fontWeight: '500', textAlign: 'center',
     paddingBottom: 4, textTransform: 'uppercase', letterSpacing: 0.6,
   },
   sheetOptions: {
-    backgroundColor: 'rgba(255,255,255,0.04)',
+    backgroundColor: SURFACE_CONTAINER_LOW,
     borderRadius: 14,
     overflow: 'hidden',
     borderWidth: 1,

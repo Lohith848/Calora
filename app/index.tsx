@@ -12,17 +12,32 @@ import Animated, {
     withSequence,
     Easing,
 } from 'react-native-reanimated'
-import { LinearGradient } from 'expo-linear-gradient'
 import { Ionicons } from '@expo/vector-icons'
 import { Text } from '@/components/ui/Text'
-import { ACCENT, ACCENT_DIM, BG, BORDER } from '@/lib/theme'
+import {
+    SURFACE_ELEVATED,
+    SURFACE_CONTAINER_LOW,
+    ON_SURFACE,
+    ON_SURFACE_VARIANT,
+    OUTLINE,
+    OUTLINE_VARIANT,
+    PRIMARY,
+    ACCENT,
+    ACCENT_DIM,
+    ACCENT_BORDER,
+    SHADOW_SM,
+    SHADOW_LG,
+    TEXT_PRIMARY,
+    TEXT_SECONDARY,
+    TEXT_TERTIARY,
+    BG,
+    BORDER,
+} from '@/lib/theme'
 import { APP_NAME, APP_TAGLINE, APP_DESCRIPTION } from '@/lib/constants'
 import { adjustBrightness } from '@/lib/utils'
 
 const { width: SW, height: SH } = Dimensions.get('window')
 
-// ─── Feature items shown on the landing page ──────────────────────────────────
-// Update these to match your app's value props.
 const FEATURES = [
     { icon: 'shield-checkmark-outline' as const, title: 'Secure by Default', desc: 'End-to-end encrypted auth' },
     { icon: 'flash-outline' as const, title: 'Blazing Fast', desc: 'Optimized for performance' },
@@ -32,7 +47,6 @@ const FEATURES = [
 export default function LandingScreen() {
     const insets = useSafeAreaInsets()
 
-    // ── Animations ──
     const headerY = useSharedValue(-20)
     const headerOpacity = useSharedValue(0)
     const heroScale = useSharedValue(0.88)
@@ -44,22 +58,17 @@ export default function LandingScreen() {
     const orbTwoY = useSharedValue(0)
 
     useEffect(() => {
-        // Header slides down
         headerY.value = withSpring(0, { damping: 16, stiffness: 120 })
         headerOpacity.value = withTiming(1, { duration: 500 })
 
-        // Hero
         heroScale.value = withDelay(180, withSpring(1, { damping: 14, stiffness: 100 }))
         heroOpacity.value = withDelay(180, withTiming(1, { duration: 550 }))
 
-        // Features
         featuresY.value = withDelay(380, withSpring(0, { damping: 16, stiffness: 110 }))
         featuresOpacity.value = withDelay(380, withTiming(1, { duration: 480 }))
 
-        // Footer
         footerOpacity.value = withDelay(550, withTiming(1, { duration: 500 }))
 
-        // Floating orbs
         orbOneY.value = withRepeat(
             withSequence(
                 withTiming(-16, { duration: 3400, easing: Easing.inOut(Easing.sin) }),
@@ -92,14 +101,6 @@ export default function LandingScreen() {
 
     return (
         <View style={s.root}>
-            {/* Background gradient */}
-            <LinearGradient
-                pointerEvents="none"
-                colors={[BG, '#0b1414', '#081010', BG]}
-                locations={[0, 0.3, 0.6, 1]}
-                style={StyleSheet.absoluteFillObject}
-            />
-
             {/* Floating decorative orbs */}
             <Animated.View pointerEvents="none" style={[s.orbOne, orbOneStyle]} />
             <Animated.View pointerEvents="none" style={[s.orbTwo, orbTwoStyle]} />
@@ -107,38 +108,29 @@ export default function LandingScreen() {
             {/* ── Rounded header bar ── */}
             <Animated.View style={[s.headerOuter, { marginTop: insets.top + 10 }, headerStyle]}>
                 <View style={s.headerBar}>
-                    {/* Left — logo + name */}
                     <View style={s.headerLeft}>
-                        <LinearGradient
-                            colors={[adjustBrightness(ACCENT, 20), ACCENT]}
-                            start={{ x: 0, y: 0 }}
-                            end={{ x: 1, y: 1 }}
-                            style={s.headerLogo}
-                        >
+                        <View style={s.headerLogo}>
                             <Text style={s.headerLogoText}>{APP_NAME.charAt(0)}</Text>
-                        </LinearGradient>
+                        </View>
                         <Text style={s.headerAppName}>{APP_NAME}</Text>
                     </View>
 
-                    {/* Right — Get Started button */}
                     <Pressable
                         onPress={() => router.push('/(auth)/login')}
                         style={({ pressed }) => [s.headerCta, pressed && { opacity: 0.82, transform: [{ scale: 0.97 }] }]}
                     >
-                        <LinearGradient
-                            colors={[ACCENT, adjustBrightness(ACCENT, -18)]}
-                            start={{ x: 0, y: 0 }}
-                            end={{ x: 1, y: 0 }}
-                            style={s.headerCtaGrad}
-                        >
+                        <View style={s.headerCtaInner}>
                             <Text style={s.headerCtaText}>Get Started</Text>
-                        </LinearGradient>
+                        </View>
                     </Pressable>
                 </View>
             </Animated.View>
 
             {/* ── Hero section ── */}
             <Animated.View style={[s.heroWrap, heroStyle]}>
+                <View style={s.iconOuter}>
+                    <Text style={s.iconLetter}>{APP_NAME.charAt(0)}</Text>
+                </View>
                 <Text style={s.heroTitle}>{APP_NAME}</Text>
                 <Text style={s.heroTagline}>{APP_TAGLINE}</Text>
                 <Text style={s.heroDesc}>{APP_DESCRIPTION}</Text>
@@ -149,7 +141,7 @@ export default function LandingScreen() {
                 {FEATURES.map((feat, i) => (
                     <View key={i} style={s.featureRow}>
                         <View style={s.featureIconWrap}>
-                            <Ionicons name={feat.icon} size={18} color={ACCENT} />
+                            <Ionicons name={feat.icon} size={18} color={PRIMARY} />
                         </View>
                         <View style={s.featureTextWrap}>
                             <Text style={s.featureTitle}>{feat.title}</Text>
@@ -180,15 +172,12 @@ export default function LandingScreen() {
     )
 }
 
-// ─── Styles ───────────────────────────────────────────────────────────────────
-
 const s = StyleSheet.create({
     root: {
         flex: 1,
         backgroundColor: BG,
     },
 
-    // Floating orbs
     orbOne: {
         position: 'absolute',
         right: -SW * 0.25,
@@ -196,7 +185,7 @@ const s = StyleSheet.create({
         width: SW * 0.72,
         height: SW * 0.72,
         borderRadius: 999,
-        backgroundColor: `${ACCENT}14`,
+        backgroundColor: ACCENT_DIM,
     },
     orbTwo: {
         position: 'absolute',
@@ -205,10 +194,9 @@ const s = StyleSheet.create({
         width: SW * 0.66,
         height: SW * 0.66,
         borderRadius: 999,
-        backgroundColor: `${ACCENT}0C`,
+        backgroundColor: ACCENT_DIM,
     },
 
-    // ── Rounded header bar ──
     headerOuter: {
         alignItems: 'center',
         paddingHorizontal: 20,
@@ -217,14 +205,15 @@ const s = StyleSheet.create({
         width: '95%',
         height: 58,
         borderRadius: 999,
-        backgroundColor: 'rgba(255,255,255,0.06)',
+        backgroundColor: SURFACE_ELEVATED,
         borderWidth: 1,
-        borderColor: BORDER,
+        borderColor: OUTLINE_VARIANT,
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
         paddingLeft: 6,
         paddingRight: 6,
+        ...SHADOW_SM,
     },
     headerLeft: {
         flexDirection: 'row',
@@ -232,20 +221,21 @@ const s = StyleSheet.create({
         gap: 10,
     },
     headerLogo: {
-        width: 36,
-        height: 36,
+        width: 44,
+        height: 44,
         borderRadius: 999,
+        backgroundColor: PRIMARY,
         alignItems: 'center',
         justifyContent: 'center',
     },
     headerLogoText: {
-        fontSize: 16,
+        fontSize: 18,
         fontWeight: '800',
         color: '#fff',
     },
     headerAppName: {
-        color: '#fff',
-        fontSize: 15,
+        color: ON_SURFACE,
+        fontSize: 16,
         fontWeight: '700',
         letterSpacing: 0.1,
     },
@@ -253,10 +243,11 @@ const s = StyleSheet.create({
         borderRadius: 999,
         overflow: 'hidden',
     },
-    headerCtaGrad: {
-        paddingHorizontal: 18,
-        paddingVertical: 9,
+    headerCtaInner: {
+        paddingHorizontal: 20,
+        paddingVertical: 10,
         borderRadius: 999,
+        backgroundColor: PRIMARY,
     },
     headerCtaText: {
         color: '#fff',
@@ -265,56 +256,47 @@ const s = StyleSheet.create({
         letterSpacing: 0.2,
     },
 
-    // Hero
     heroWrap: {
         paddingHorizontal: 24,
-        paddingTop: 36,
+        paddingTop: 40,
         gap: 10,
     },
     iconOuter: {
-        width: 64,
-        height: 64,
-        borderRadius: 20,
-        overflow: 'hidden',
-        marginBottom: 6,
-        shadowColor: ACCENT,
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.35,
-        shadowRadius: 14,
-        elevation: 8,
-    },
-    iconGradient: {
-        flex: 1,
+        width: 56,
+        height: 56,
+        borderRadius: 16,
+        backgroundColor: PRIMARY,
         alignItems: 'center',
         justifyContent: 'center',
+        marginBottom: 4,
+        ...SHADOW_LG,
     },
     iconLetter: {
-        fontSize: 28,
+        fontSize: 26,
         fontWeight: '800',
         color: '#fff',
     },
     heroTitle: {
-        color: '#fff',
+        color: ON_SURFACE,
         fontSize: 34,
         fontWeight: '800',
         letterSpacing: -0.8,
         lineHeight: 40,
     },
     heroTagline: {
-        color: ACCENT,
+        color: ON_SURFACE_VARIANT,
         fontSize: 15,
         fontWeight: '600',
         letterSpacing: 0.1,
     },
     heroDesc: {
-        color: 'rgba(255,255,255,0.48)',
+        color: TEXT_TERTIARY,
         fontSize: 14,
         lineHeight: 21,
         maxWidth: 320,
         marginTop: 2,
     },
 
-    // Features
     featuresWrap: {
         flex: 1,
         justifyContent: 'center',
@@ -325,17 +307,18 @@ const s = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         gap: 14,
-        backgroundColor: 'rgba(255,255,255,0.04)',
+        backgroundColor: SURFACE_ELEVATED,
         borderWidth: 1,
-        borderColor: BORDER,
-        borderRadius: 14,
+        borderColor: ACCENT_BORDER,
+        borderRadius: 16,
         paddingVertical: 14,
         paddingHorizontal: 16,
+        ...SHADOW_SM,
     },
     featureIconWrap: {
-        width: 38,
-        height: 38,
-        borderRadius: 11,
+        width: 40,
+        height: 40,
+        borderRadius: 12,
         backgroundColor: ACCENT_DIM,
         alignItems: 'center',
         justifyContent: 'center',
@@ -345,38 +328,37 @@ const s = StyleSheet.create({
         gap: 2,
     },
     featureTitle: {
-        color: '#fff',
+        color: ON_SURFACE,
         fontSize: 14,
         fontWeight: '700',
     },
     featureDesc: {
-        color: 'rgba(255,255,255,0.42)',
+        color: TEXT_TERTIARY,
         fontSize: 12.5,
     },
 
-    // Footer
     footer: {
         paddingHorizontal: 20,
         gap: 10,
         alignItems: 'center',
     },
     signInText: {
-        color: 'rgba(255,255,255,0.35)',
+        color: TEXT_TERTIARY,
         fontSize: 13,
     },
     signInLink: {
-        color: ACCENT,
+        color: PRIMARY,
         fontWeight: '600',
     },
     legal: {
-        color: 'rgba(255,255,255,0.22)',
+        color: TEXT_TERTIARY,
         textAlign: 'center',
         fontSize: 11,
         lineHeight: 17,
         paddingHorizontal: 8,
     },
     legalLink: {
-        color: 'rgba(255,255,255,0.38)',
+        color: TEXT_SECONDARY,
         textDecorationLine: 'underline',
     },
 })

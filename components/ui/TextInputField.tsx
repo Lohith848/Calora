@@ -14,7 +14,7 @@ export default function TextInputField({ label, error, style, ...props }: TextIn
             {label ? <Text style={s.label}>{label}</Text> : null}
             <TextInput
                 style={[s.input, error ? s.inputError : null, style]}
-                placeholderTextColor="rgba(255,255,255,0.22)"
+                placeholderTextColor={TEXT_TERTIARY}
                 {...props}
             />
             {error ? <Text style={s.error}>{error}</Text> : null}
@@ -33,7 +33,7 @@ const s = StyleSheet.create({
     },
     input: {
         height: 46,
-        backgroundColor: 'rgba(255,255,255,0.06)',
+        backgroundColor: '#f3f3f3',
         borderWidth: 1,
         borderColor: BORDER,
         borderRadius: 12,

@@ -1,8 +1,16 @@
 import { Pressable, StyleSheet, ActivityIndicator, type PressableProps, type ViewStyle } from 'react-native'
 import { Text } from './Text'
-import { ACCENT, ACCENT_DIM, ACCENT_BORDER, BG, SURFACE, BORDER, TEXT_PRIMARY, TEXT_SECONDARY } from '@/lib/theme'
-import { LinearGradient } from 'expo-linear-gradient'
-import { adjustBrightness } from '@/lib/utils'
+import {
+  PRIMARY,
+  ON_PRIMARY,
+  ACCENT_DIM,
+  ACCENT_BORDER,
+  SURFACE_ELEVATED,
+  BORDER,
+  TEXT_PRIMARY,
+  TEXT_SECONDARY,
+  SHADOW_SM,
+} from '@/lib/theme'
 
 type ButtonVariant = 'primary' | 'secondary' | 'outline' | 'ghost' | 'destructive'
 type ButtonSize    = 'sm' | 'md' | 'lg'
@@ -18,7 +26,7 @@ interface ButtonProps extends Omit<PressableProps, 'style'> {
 
 const SIZE_STYLES: Record<ButtonSize, { height: number; borderRadius: number; paddingHorizontal: number; fontSize: number }> = {
   sm:  { height: 36, borderRadius: 10, paddingHorizontal: 16, fontSize: 13 },
-  md:  { height: 48, borderRadius: 13, paddingHorizontal: 20, fontSize: 15 },
+  md:  { height: 48, borderRadius: 14, paddingHorizontal: 20, fontSize: 15 },
   lg:  { height: 56, borderRadius: 16, paddingHorizontal: 24, fontSize: 16 },
 }
 
@@ -44,13 +52,17 @@ export function Button({
     alignSelf:       fullWidth ? 'stretch' : 'flex-start',
     opacity:         isDisabled ? 0.4 : 1,
     overflow:        'hidden',
+    ...(variant === 'primary' && {
+      backgroundColor: PRIMARY,
+      ...SHADOW_SM,
+    }),
     ...(variant === 'secondary' && {
       backgroundColor: ACCENT_DIM,
       borderWidth: 1,
       borderColor: ACCENT_BORDER,
     }),
     ...(variant === 'outline' && {
-      backgroundColor: 'transparent',
+      backgroundColor: SURFACE_ELEVATED,
       borderWidth: 1,
       borderColor: BORDER,
     }),
@@ -58,43 +70,32 @@ export function Button({
       backgroundColor: 'transparent',
     }),
     ...(variant === 'destructive' && {
-      backgroundColor: 'rgba(248,113,113,0.1)',
+      backgroundColor: 'rgba(186,26,26,0.08)',
       borderWidth: 1,
-      borderColor: 'rgba(248,113,113,0.2)',
+      borderColor: 'rgba(186,26,26,0.15)',
     }),
   }
 
   const textColor =
-    variant === 'primary'     ? BG :
-    variant === 'secondary'   ? ACCENT :
+    variant === 'primary'     ? ON_PRIMARY :
+    variant === 'secondary'   ? PRIMARY :
     variant === 'outline'     ? TEXT_PRIMARY :
     variant === 'ghost'       ? TEXT_SECONDARY :
-    variant === 'destructive' ? '#f87171' :
+    variant === 'destructive' ? '#ba1a1a' :
     TEXT_PRIMARY
 
   return (
     <Pressable
       style={({ pressed }) => [
         containerStyle,
-        pressed && !isDisabled && { opacity: 0.82 },
+        pressed && !isDisabled && { opacity: 0.85 },
         style,
       ]}
       disabled={isDisabled}
       {...rest}
     >
-      {variant === 'primary' && (
-        <LinearGradient
-          colors={[ACCENT, adjustBrightness(ACCENT, -20)]}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={StyleSheet.absoluteFillObject}
-        />
-      )}
       {loading ? (
-        <ActivityIndicator
-          size="small"
-          color={variant === 'primary' ? BG : ACCENT}
-        />
+        <ActivityIndicator size="small" color={variant === 'primary' ? ON_PRIMARY : PRIMARY} />
       ) : (
         <Text style={{ color: textColor, fontSize: sz.fontSize, fontWeight: '700' }}>
           {label}

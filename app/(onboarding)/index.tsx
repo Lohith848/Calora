@@ -9,18 +9,23 @@ import AsyncStorage from '@react-native-async-storage/async-storage'
 import { Text } from '@/components/ui/Text'
 import { supabase, isSupabaseEnabled } from '@/lib/supabase'
 import { track } from '@/lib/analytics'
-import { ACCENT, ACCENT_DIM, ACCENT_BORDER, BG, BORDER } from '@/lib/theme'
-import { LinearGradient } from 'expo-linear-gradient'
-import { adjustBrightness } from '@/lib/utils'
+import {
+  SURFACE_ELEVATED, SURFACE_CONTAINER_LOW,
+  ON_SURFACE, ON_SURFACE_VARIANT,
+  OUTLINE, OUTLINE_VARIANT,
+  PRIMARY, ACCENT, ACCENT_DIM, ACCENT_BORDER, SHADOW_SM,
+  TEXT_PRIMARY, TEXT_SECONDARY, TEXT_TERTIARY, TEXT_DISABLED,
+  BG, BORDER,
+} from '@/lib/theme'
 import { Fonts } from '@/lib/typography'
 
 export default function OnboardingScreen() {
   const insets = useSafeAreaInsets()
 
   const [displayName, setDisplayName] = useState('')
-  const [calorieGoal,  setCalorieGoal]  = useState('2000')
-  const [loading,      setLoading]     = useState(false)
-  const [error,        setError]       = useState<string | null>(null)
+  const [calorieGoal, setCalorieGoal] = useState('2000')
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   track('onboarding_started')
 
@@ -37,8 +42,6 @@ export default function OnboardingScreen() {
 
     const cleanName = name.trim() || 'Health Enthusiast'
 
-    // Compute standard macro splits (25% Protein, 45% Carbs, 30% Fat)
-    // Protein: 4 kcal/g, Carbs: 4 kcal/g, Fat: 9 kcal/g
     const protein = Math.round((caloriesVal * 0.25) / 4)
     const carbs = Math.round((caloriesVal * 0.45) / 4)
     const fat = Math.round((caloriesVal * 0.30) / 9)
@@ -74,12 +77,10 @@ export default function OnboardingScreen() {
 
         const { data: { user } } = await supabase.auth.getUser()
         if (user) {
-          // Upsert profiles
           await supabase
             .from('profiles')
             .upsert({ id: user.id, display_name: cleanName })
 
-          // Upsert daily_goals
           await supabase
             .from('daily_goals')
             .upsert({
@@ -98,7 +99,6 @@ export default function OnboardingScreen() {
     track('onboarding_completed', { skipped: !name.trim(), calories: caloriesVal })
     setLoading(false)
 
-    // Notify auth layout that setup is complete (and bypass in dev)
     DeviceEventEmitter.emit('__dev_complete_onboarding__')
   }
 
@@ -111,7 +111,7 @@ export default function OnboardingScreen() {
         <Animated.View entering={FadeInDown.delay(100).duration(400)} style={s.content}>
           {/* Header */}
           <View style={s.header}>
-            <View style={[s.iconBadge, { backgroundColor: ACCENT_DIM, borderColor: ACCENT_BORDER }]}>
+            <View style={s.iconBadge}>
               <Text style={{ fontSize: 28 }}>🥗</Text>
             </View>
             <Text style={s.title}>Set up your profile</Text>
@@ -120,41 +120,43 @@ export default function OnboardingScreen() {
             </Text>
           </View>
 
-          {/* Form Fields */}
-          <View style={s.form}>
-            <View style={s.fieldGroup}>
-              <Text style={s.label}>YOUR NAME</Text>
-              <TextInput
-                value={displayName}
-                onChangeText={(v) => { setDisplayName(v); setError(null) }}
-                placeholder="Enter your name"
-                placeholderTextColor="rgba(255,255,255,0.18)"
-                style={s.input}
-                autoCapitalize="words"
-                returnKeyType="next"
-                autoFocus
-              />
+          {/* Form card */}
+          <View style={s.card}>
+            <View style={s.form}>
+              <View style={s.fieldGroup}>
+                <Text style={s.label}>YOUR NAME</Text>
+                <TextInput
+                  value={displayName}
+                  onChangeText={(v) => { setDisplayName(v); setError(null) }}
+                  placeholder="Enter your name"
+                  placeholderTextColor={TEXT_DISABLED}
+                  style={s.input}
+                  autoCapitalize="words"
+                  returnKeyType="next"
+                  autoFocus
+                />
+              </View>
+
+              <View style={s.fieldGroup}>
+                <Text style={s.label}>DAILY CALORIE TARGET (KCAL)</Text>
+                <TextInput
+                  value={calorieGoal}
+                  onChangeText={(v) => { setCalorieGoal(v.replace(/\D/g, '')); setError(null) }}
+                  placeholder="2000"
+                  placeholderTextColor={TEXT_DISABLED}
+                  style={s.input}
+                  keyboardType="number-pad"
+                  returnKeyType="done"
+                />
+              </View>
             </View>
 
-            <View style={s.fieldGroup}>
-              <Text style={s.label}>DAILY CALORIE TARGET (KCAL)</Text>
-              <TextInput
-                value={calorieGoal}
-                onChangeText={(v) => { setCalorieGoal(v.replace(/\D/g, '')); setError(null) }}
-                placeholder="2000"
-                placeholderTextColor="rgba(255,255,255,0.18)"
-                style={s.input}
-                keyboardType="number-pad"
-                returnKeyType="done"
-              />
-            </View>
+            {error ? (
+              <Animated.View entering={FadeIn.duration(180)} style={s.errorBox}>
+                <Text style={s.errorText}>{error}</Text>
+              </Animated.View>
+            ) : null}
           </View>
-
-          {error ? (
-            <Animated.View entering={FadeIn.duration(180)} style={s.errorBox}>
-              <Text style={{ color: '#f87171', fontSize: 13 }}>{error}</Text>
-            </Animated.View>
-          ) : null}
         </Animated.View>
 
         {/* Bottom buttons */}
@@ -163,30 +165,23 @@ export default function OnboardingScreen() {
             onPress={() => complete(displayName, calorieGoal)}
             disabled={loading}
             style={({ pressed }) => ({
-              opacity: loading ? 0.5 : pressed ? 0.85 : 1,
-              borderRadius: 16, overflow: 'hidden',
+              opacity: loading ? 0.5 : pressed ? 0.92 : 1,
             })}
           >
-            <LinearGradient
-              colors={[ACCENT, adjustBrightness(ACCENT, -25)]}
-              start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
-              style={s.primaryBtn}
-            >
+            <View style={s.primaryBtn}>
               {loading
                 ? <ActivityIndicator size="small" color="#fff" />
-                : <Text style={{ fontSize: 16, fontWeight: '800', color: '#fff' }}>
-                    Save & Continue  →
-                  </Text>
+                : <Text style={s.primaryBtnText}>Save & Continue  →</Text>
               }
-            </LinearGradient>
+            </View>
           </Pressable>
 
-          <Pressable 
-            onPress={() => complete('Health Tracker', '2000')} 
-            disabled={loading} 
-            style={{ alignItems: 'center', paddingVertical: 6 }}
+          <Pressable
+            onPress={() => complete('Health Tracker', '2000')}
+            disabled={loading}
+            style={s.skipLink}
           >
-            <Text style={{ fontSize: 14, color: 'rgba(255,255,255,0.3)' }}>Use defaults (2000 kcal)</Text>
+            <Text style={s.skipText}>Use defaults (2000 kcal)</Text>
           </Pressable>
         </Animated.View>
       </View>
@@ -195,30 +190,115 @@ export default function OnboardingScreen() {
 }
 
 const s = StyleSheet.create({
-  root: { flex: 1, paddingHorizontal: 24 },
-  content: { flex: 1, gap: 24, justifyContent: 'center' },
-  header: { gap: 12, alignItems: 'center', paddingBottom: 8 },
-  iconBadge: {
-    width: 80, height: 80, borderRadius: 24,
-    borderWidth: 1.5, alignItems: 'center', justifyContent: 'center',
+  root: {
+    flex: 1,
+    paddingHorizontal: 24,
+    backgroundColor: BG,
   },
-  title:    { fontSize: 28, fontWeight: '800', color: '#fff', letterSpacing: -0.5, textAlign: 'center' },
-  subtitle: { fontSize: 14, color: 'rgba(255,255,255,0.38)', textAlign: 'center', lineHeight: 21, maxWidth: 280 },
-
-  form: { gap: 16 },
-  fieldGroup: { gap: 8 },
-  label: { fontSize: 11, fontWeight: '700', letterSpacing: 0.8, textTransform: 'uppercase', color: 'rgba(255,255,255,0.3)' },
+  content: {
+    flex: 1,
+    gap: 24,
+    justifyContent: 'center',
+  },
+  header: {
+    gap: 12,
+    alignItems: 'center',
+    paddingBottom: 8,
+  },
+  iconBadge: {
+    width: 88,
+    height: 88,
+    borderRadius: 28,
+    backgroundColor: ACCENT_DIM,
+    borderWidth: 1.5,
+    borderColor: ACCENT_BORDER,
+    alignItems: 'center',
+    justifyContent: 'center',
+    ...SHADOW_SM,
+  },
+  title: {
+    fontSize: 28,
+    fontWeight: '800',
+    color: ON_SURFACE,
+    letterSpacing: -0.5,
+    textAlign: 'center',
+    fontFamily: Fonts.bold,
+  },
+  subtitle: {
+    fontSize: 14,
+    color: TEXT_TERTIARY,
+    textAlign: 'center',
+    lineHeight: 21,
+    maxWidth: 280,
+    fontFamily: Fonts.regular,
+  },
+  card: {
+    backgroundColor: SURFACE_ELEVATED,
+    borderRadius: 16,
+    padding: 24,
+    gap: 16,
+    ...SHADOW_SM,
+  },
+  form: {
+    gap: 20,
+  },
+  fieldGroup: {
+    gap: 8,
+  },
+  label: {
+    fontSize: 11,
+    fontWeight: '700',
+    letterSpacing: 0.8,
+    textTransform: 'uppercase',
+    color: TEXT_TERTIARY,
+    fontFamily: Fonts.bold,
+  },
   input: {
-    height: 52, backgroundColor: 'rgba(255,255,255,0.06)',
-    borderWidth: 1, borderColor: BORDER, borderRadius: 14,
-    paddingHorizontal: 18, color: '#fff', fontSize: 16,
+    height: 52,
+    backgroundColor: SURFACE_CONTAINER_LOW,
+    borderWidth: 1,
+    borderColor: BORDER,
+    borderRadius: 14,
+    paddingHorizontal: 18,
+    color: ON_SURFACE,
+    fontSize: 16,
     fontFamily: Fonts.regular,
   },
   errorBox: {
-    backgroundColor: 'rgba(248,113,113,0.08)', borderRadius: 8,
-    borderWidth: 1, borderColor: 'rgba(248,113,113,0.2)',
-    paddingHorizontal: 14, paddingVertical: 10,
+    backgroundColor: 'rgba(186,26,26,0.06)',
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
   },
-  buttons:    { gap: 12 },
-  primaryBtn: { height: 56, alignItems: 'center', justifyContent: 'center' },
+  errorText: {
+    color: '#ba1a1a',
+    fontSize: 13,
+    fontFamily: Fonts.regular,
+  },
+  buttons: {
+    gap: 12,
+  },
+  primaryBtn: {
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: PRIMARY,
+    alignItems: 'center',
+    justifyContent: 'center',
+    ...SHADOW_SM,
+  },
+  primaryBtnText: {
+    fontSize: 16,
+    fontWeight: '800',
+    color: '#ffffff',
+    fontFamily: Fonts.bold,
+  },
+  skipLink: {
+    alignItems: 'center',
+    paddingVertical: 8,
+  },
+  skipText: {
+    fontSize: 14,
+    color: TEXT_TERTIARY,
+    fontFamily: Fonts.regular,
+  },
 })

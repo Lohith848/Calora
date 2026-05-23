@@ -14,6 +14,8 @@ import {
     TEXT_SECONDARY,
     TEXT_TERTIARY,
     ACCENT,
+    ON_SURFACE_VARIANT,
+    SURFACE_CONTAINER_LOW,
 } from '@/lib/theme'
 import StatusBadge from '@/components/ui/StatusBadge'
 import { statusLabel, type ItemStatus, type TaskItem } from '@/lib/mockData'
@@ -49,7 +51,7 @@ export default function DetailScreen() {
         <View style={{ flex: 1, backgroundColor: BG }}>
             <View style={[s.header, { paddingTop: insets.top + 8 }]}>
                 <Pressable onPress={() => router.back()} hitSlop={12}>
-                    <Ionicons name="chevron-back" size={24} color="rgba(255,255,255,0.6)" />
+                    <Ionicons name="chevron-back" size={24} color={ON_SURFACE_VARIANT} />
                 </Pressable>
                 <Text style={s.headerTitle} numberOfLines={1}>{item.name}</Text>
                 <View style={{ width: 24 }} />
@@ -124,7 +126,7 @@ function priorityStyle(task: TaskItem) {
         default:
             return {
                 borderColor: BORDER,
-                backgroundColor: 'rgba(255,255,255,0.05)',
+                backgroundColor: SURFACE_CONTAINER_LOW,
             }
     }
 }
@@ -147,7 +149,7 @@ const s = StyleSheet.create({
         paddingHorizontal: 16,
         paddingBottom: 12,
         borderBottomWidth: StyleSheet.hairlineWidth,
-        borderBottomColor: 'rgba(255,255,255,0.08)',
+        borderBottomColor: BORDER,
     },
     headerTitle: { flex: 1, color: TEXT_PRIMARY, fontSize: 16.5, fontWeight: '700', textAlign: 'center' },
     body: { padding: 20, gap: 12 },
@@ -163,7 +165,7 @@ const s = StyleSheet.create({
         borderRadius: 10,
         paddingVertical: 8,
         paddingHorizontal: 9,
-        backgroundColor: 'rgba(255,255,255,0.03)',
+        backgroundColor: SURFACE_CONTAINER_LOW,
     },
     metricLabel: { fontSize: 11, color: TEXT_TERTIARY },
     metricValue: { fontSize: 14, color: TEXT_PRIMARY, fontWeight: '700', marginTop: 2 },

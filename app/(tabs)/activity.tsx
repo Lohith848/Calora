@@ -5,12 +5,20 @@ import { Ionicons } from '@expo/vector-icons'
 import { Text } from '@/components/ui/Text'
 import { Card } from '@/components/ui/Card'
 import {
-    ACCENT,
-    BG,
-    BORDER,
+    SURFACE_ELEVATED,
+    SURFACE_CONTAINER_LOW,
+    ON_SURFACE,
+    ON_SURFACE_VARIANT,
+    OUTLINE,
+    PRIMARY,
+    ACCENT_DIM,
+    ACCENT_BORDER,
+    SHADOW_SM,
     TEXT_PRIMARY,
     TEXT_SECONDARY,
     TEXT_TERTIARY,
+    BG,
+    BORDER,
 } from '@/lib/theme'
 import { TAB_BAR_CLEARANCE } from '@/components/TabBar'
 import { useNotifications } from '@/hooks/useNotifications'
@@ -24,7 +32,6 @@ export default function ActivityScreen() {
     const { data: remoteItems = [] } = useNotifications()
     const [items, setItems] = useState<NotificationItem[]>(remoteItems)
 
-    // Sync local state when remote data arrives
     useEffect(() => {
         if (remoteItems.length > 0) setItems(remoteItems)
     }, [remoteItems])
@@ -56,8 +63,7 @@ export default function ActivityScreen() {
                     <Text style={s.subtitle}>Product updates, team events, and billing alerts.</Text>
                 </View>
 
-                <Pressable onPress={markAllRead} style={({ pressed }) => [s.markAllBtn, pressed && { opacity: 0.75 }]}
-                >
+                <Pressable onPress={markAllRead} style={({ pressed }) => [s.markAllBtn, pressed && { opacity: 0.75 }]}>
                     <Text style={s.markAllText}>Mark all read</Text>
                 </Pressable>
             </View>
@@ -91,7 +97,7 @@ export default function ActivityScreen() {
                             style={[s.row, index < visibleItems.length - 1 && s.rowDivider]}
                         >
                             <View style={[s.iconWrap, item.read && s.iconWrapMuted]}>
-                                <Ionicons name={categoryIcon(item.category)} size={14} color={item.read ? TEXT_SECONDARY : ACCENT} />
+                                <Ionicons name={categoryIcon(item.category)} size={14} color={item.read ? TEXT_SECONDARY : PRIMARY} />
                             </View>
 
                             <View style={{ flex: 1 }}>
@@ -127,61 +133,61 @@ function categoryIcon(category: 'billing' | 'system' | 'product' | 'team') {
 const s = StyleSheet.create({
     container: { paddingHorizontal: 20, gap: 12 },
     header: { flexDirection: 'row', justifyContent: 'space-between', gap: 12, alignItems: 'flex-start' },
-    title: { fontSize: 24, fontWeight: '800', color: TEXT_PRIMARY, letterSpacing: -0.5 },
-    subtitle: { marginTop: 3, fontSize: 13, color: TEXT_SECONDARY },
+    title: { fontSize: 28, fontWeight: '800', color: ON_SURFACE, letterSpacing: -0.5 },
+    subtitle: { marginTop: 4, fontSize: 13, color: ON_SURFACE_VARIANT, lineHeight: 18 },
     markAllBtn: {
         borderWidth: 1,
-        borderColor: BORDER,
-        backgroundColor: 'rgba(255,255,255,0.05)',
-        paddingHorizontal: 10,
-        paddingVertical: 7,
-        borderRadius: 9,
+        borderColor: ACCENT_BORDER,
+        backgroundColor: SURFACE_ELEVATED,
+        paddingHorizontal: 12,
+        paddingVertical: 8,
+        borderRadius: 10,
+        ...SHADOW_SM,
     },
-    markAllText: { fontSize: 12, color: TEXT_PRIMARY, fontWeight: '600' },
+    markAllText: { fontSize: 12, color: PRIMARY, fontWeight: '600' },
     segmentRow: {
         flexDirection: 'row',
-        backgroundColor: 'rgba(255,255,255,0.05)',
-        borderWidth: 1,
-        borderColor: BORDER,
-        borderRadius: 11,
+        backgroundColor: SURFACE_CONTAINER_LOW,
+        borderRadius: 10,
         padding: 3,
     },
     segmentItem: {
         flex: 1,
         borderRadius: 8,
         alignItems: 'center',
-        paddingVertical: 7,
+        paddingVertical: 8,
     },
     segmentItemActive: {
-        backgroundColor: 'rgba(255,255,255,0.14)',
+        backgroundColor: SURFACE_ELEVATED,
+        ...SHADOW_SM,
     },
-    segmentText: { fontSize: 12, color: TEXT_SECONDARY, fontWeight: '600' },
-    segmentTextActive: { color: TEXT_PRIMARY },
-    emptyCard: { alignItems: 'center', gap: 5, paddingVertical: 26 },
-    emptyTitle: { fontSize: 15, color: TEXT_PRIMARY, fontWeight: '700' },
-    emptySub: { fontSize: 13, color: TEXT_SECONDARY },
-    listCard: { paddingVertical: 2, paddingHorizontal: 0 },
-    row: { flexDirection: 'row', alignItems: 'flex-start', gap: 10, paddingHorizontal: 12, paddingVertical: 11 },
+    segmentText: { fontSize: 12, color: ON_SURFACE_VARIANT, fontWeight: '600' },
+    segmentTextActive: { color: ON_SURFACE },
+    emptyCard: { alignItems: 'center', gap: 6, paddingVertical: 32 },
+    emptyTitle: { fontSize: 15, color: ON_SURFACE, fontWeight: '700' },
+    emptySub: { fontSize: 13, color: ON_SURFACE_VARIANT },
+    listCard: { paddingVertical: 4, paddingHorizontal: 0 },
+    row: { flexDirection: 'row', alignItems: 'flex-start', gap: 12, paddingHorizontal: 16, paddingVertical: 12 },
     rowDivider: { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: BORDER },
     iconWrap: {
-        width: 28,
-        height: 28,
-        borderRadius: 8,
+        width: 32,
+        height: 32,
+        borderRadius: 10,
         alignItems: 'center',
         justifyContent: 'center',
         marginTop: 1,
-        backgroundColor: 'rgba(255,255,255,0.10)',
+        backgroundColor: ACCENT_DIM,
     },
-    iconWrapMuted: { backgroundColor: 'rgba(255,255,255,0.05)' },
-    rowTitle: { fontSize: 13.5, color: TEXT_PRIMARY, fontWeight: '700' },
-    rowTitleMuted: { color: TEXT_SECONDARY },
-    rowBody: { marginTop: 1, fontSize: 12.5, lineHeight: 18, color: TEXT_SECONDARY },
-    rowTime: { marginTop: 5, fontSize: 11, color: TEXT_TERTIARY },
+    iconWrapMuted: { backgroundColor: SURFACE_CONTAINER_LOW },
+    rowTitle: { fontSize: 14, color: ON_SURFACE, fontWeight: '700' },
+    rowTitleMuted: { color: ON_SURFACE_VARIANT },
+    rowBody: { marginTop: 2, fontSize: 13, lineHeight: 18, color: ON_SURFACE_VARIANT },
+    rowTime: { marginTop: 6, fontSize: 11, color: OUTLINE },
     unreadDot: {
-        width: 7,
-        height: 7,
+        width: 8,
+        height: 8,
         borderRadius: 999,
-        marginTop: 6,
-        backgroundColor: ACCENT,
+        marginTop: 7,
+        backgroundColor: PRIMARY,
     },
 })

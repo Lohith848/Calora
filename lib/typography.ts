@@ -1,19 +1,11 @@
-/**
- * Typography system.
- *
- * These names must match the font keys loaded in app/_layout.tsx.
- */
 export const Fonts = {
-  regular: 'Inter_400Regular',   // 400
-  medium: 'Inter_500Medium',     // 500
-  semibold: 'Inter_600SemiBold', // 600
-  bold: 'Inter_700Bold',         // 700
-  black: 'Inter_800ExtraBold',   // 800–900
+  regular: 'HankenGrotesk_400Regular',
+  medium: 'HankenGrotesk_500Medium',
+  semibold: 'HankenGrotesk_600SemiBold',
+  bold: 'HankenGrotesk_700Bold',
+  black: 'HankenGrotesk_800ExtraBold',
 }
 
-/**
- * Map a fontWeight value to the matching font family name.
- */
 export function weightToFamily(weight?: string | number | null): string | undefined {
   switch (String(weight ?? '400')) {
     case '500': return Fonts.medium
@@ -26,17 +18,57 @@ export function weightToFamily(weight?: string | number | null): string | undefi
   }
 }
 
-/**
- * Type scale — consistent size/lineHeight pairs.
- * Use these instead of hardcoding px values.
- */
 export const TypeScale = {
-  xs: { fontSize: 11, lineHeight: 16 },  // tiny label / badge
-  sm: { fontSize: 13, lineHeight: 18 },  // caption / hint
-  base: { fontSize: 15, lineHeight: 22 },  // body text
-  lg: { fontSize: 17, lineHeight: 24 },  // section title / button
-  xl: { fontSize: 20, lineHeight: 28 },  // card heading
-  '2xl': { fontSize: 24, lineHeight: 32 },  // page heading
-  '3xl': { fontSize: 30, lineHeight: 38 },  // hero heading
-  '4xl': { fontSize: 36, lineHeight: 44 },  // display
+  'display-lg': {
+    fontFamily: Fonts.bold,
+    fontSize: 40,
+    lineHeight: 48,
+    letterSpacing: -0.02,
+  },
+  'display-lg-mobile': {
+    fontFamily: Fonts.bold,
+    fontSize: 32,
+    lineHeight: 38,
+  },
+  'headline-lg': {
+    fontFamily: Fonts.bold,
+    fontSize: 28,
+    lineHeight: 34,
+    letterSpacing: -0.01,
+  },
+  'headline-md': {
+    fontFamily: Fonts.semibold,
+    fontSize: 20,
+    lineHeight: 26,
+  },
+  'body-lg': {
+    fontFamily: Fonts.regular,
+    fontSize: 17,
+    lineHeight: 24,
+  },
+  'body-md': {
+    fontFamily: Fonts.regular,
+    fontSize: 15,
+    lineHeight: 20,
+  },
+  'label-lg': {
+    fontFamily: Fonts.semibold,
+    fontSize: 13,
+    lineHeight: 18,
+    letterSpacing: 0.01,
+  },
+  'label-sm': {
+    fontFamily: Fonts.medium,
+    fontSize: 11,
+    lineHeight: 14,
+    letterSpacing: 0.02,
+  },
+  xs: { fontFamily: Fonts.medium, fontSize: 11, lineHeight: 16 },
+  sm: { fontFamily: Fonts.regular, fontSize: 13, lineHeight: 18 },
+  base: { fontFamily: Fonts.regular, fontSize: 15, lineHeight: 22 },
+  lg: { fontFamily: Fonts.regular, fontSize: 17, lineHeight: 24 },
+  xl: { fontFamily: Fonts.semibold, fontSize: 20, lineHeight: 28 },
+  '2xl': { fontFamily: Fonts.bold, fontSize: 24, lineHeight: 32 },
+  '3xl': { fontFamily: Fonts.bold, fontSize: 30, lineHeight: 38 },
+  '4xl': { fontFamily: Fonts.black, fontSize: 36, lineHeight: 44 },
 } as const

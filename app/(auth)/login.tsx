@@ -22,13 +22,16 @@ import { router } from 'expo-router'
 import * as WebBrowser from 'expo-web-browser'
 import { Text } from '@/components/ui/Text'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
-import { LinearGradient } from 'expo-linear-gradient'
 import { Ionicons } from '@expo/vector-icons'
 import { supabase } from '@/lib/supabase'
 import { track } from '@/lib/analytics'
-import { ACCENT, ACCENT_DIM, ACCENT_BORDER, BG, SURFACE, BORDER, ERROR, ERROR_DIM, TEXT_SECONDARY } from '@/lib/theme'
+import {
+  SURFACE_ELEVATED, SURFACE_CONTAINER_LOW, ON_SURFACE,
+  PRIMARY, ACCENT, ACCENT_DIM, ACCENT_BORDER, SHADOW_SM,
+  TEXT_SECONDARY, TEXT_TERTIARY, TEXT_DISABLED,
+  BG, BORDER, ERROR, ERROR_DIM,
+} from '@/lib/theme'
 import { APP_NAME, APP_SCHEME } from '@/lib/constants'
-import { adjustBrightness } from '@/lib/utils'
 import { Fonts } from '@/lib/typography'
 
 // Required for OAuth session handling on Android
@@ -226,7 +229,7 @@ export default function LoginScreen() {
     <View style={s.root}>
       {/* Back button */}
       <Pressable onPress={() => router.back()} style={[s.backBtn, { top: insets.top + 14 }]} hitSlop={14}>
-        <Ionicons name="chevron-back" size={24} color="rgba(255,255,255,0.6)" />
+        <Ionicons name="chevron-back" size={24} color={ON_SURFACE} />
       </Pressable>
 
       <KeyboardAvoidingView
@@ -273,7 +276,7 @@ export default function LoginScreen() {
                     value={email}
                     onChangeText={(v) => { setEmail(v); setError(null) }}
                     placeholder="you@example.com"
-                    placeholderTextColor="rgba(255,255,255,0.18)"
+                    placeholderTextColor={TEXT_DISABLED}
                     style={[s.input, error ? s.inputErr : null]}
                     keyboardType="email-address"
                     autoCapitalize="none"
@@ -289,21 +292,15 @@ export default function LoginScreen() {
                 <Pressable
                   onPress={handleSendOtp}
                   disabled={loading || !email.trim()}
-                  style={({ pressed }) => ({
-                    opacity: (loading || !email.trim()) ? 0.4 : pressed ? 0.85 : 1,
-                    borderRadius: 14, overflow: 'hidden',
-                  })}
+                  style={({ pressed }) => [
+                    s.btn,
+                    { opacity: (loading || !email.trim()) ? 0.4 : pressed ? 0.85 : 1 },
+                  ]}
                 >
-                  <LinearGradient
-                    colors={[ACCENT, adjustBrightness(ACCENT, -25)]}
-                    start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
-                    style={s.btn}
-                  >
-                    {loading
-                      ? <ActivityIndicator size="small" color="#fff" />
-                      : <Text style={s.btnText}>Continue</Text>
-                    }
-                  </LinearGradient>
+                  {loading
+                    ? <ActivityIndicator size="small" color="#fff" />
+                    : <Text style={s.btnText}>Continue</Text>
+                  }
                 </Pressable>
 
                 {/* ─── Social logins ────────────────────── */}
@@ -320,7 +317,7 @@ export default function LoginScreen() {
                     style={({ pressed }) => [s.socialBtn, pressed && { opacity: 0.75 }]}
                   >
                     <View style={s.socialIcon}>
-                      <Text style={{ fontSize: 15, fontWeight: '700' }}>G</Text>
+                      <Text style={{ fontSize: 15, fontWeight: '700', color: PRIMARY }}>G</Text>
                     </View>
                     <Text style={s.socialBtnText}>Google</Text>
                   </Pressable>
@@ -330,7 +327,7 @@ export default function LoginScreen() {
                     onPress={handleAppleLogin}
                     style={({ pressed }) => [s.socialBtn, pressed && { opacity: 0.75 }]}
                   >
-                    <Ionicons name="logo-apple" size={17} color="#fff" />
+                    <Ionicons name="logo-apple" size={17} color={ON_SURFACE} />
                     <Text style={s.socialBtnText}>Apple</Text>
                   </Pressable>
                 </View>
@@ -371,32 +368,26 @@ export default function LoginScreen() {
                 <Pressable
                   onPress={() => handleVerifyOtp(otp.join(''))}
                   disabled={loading || otp.includes('') || !!lockoutEnd}
-                  style={({ pressed }) => ({
-                    opacity: (loading || otp.includes('') || !!lockoutEnd) ? 0.4 : pressed ? 0.85 : 1,
-                    borderRadius: 14, overflow: 'hidden',
-                  })}
+                  style={({ pressed }) => [
+                    s.btn,
+                    { opacity: (loading || otp.includes('') || !!lockoutEnd) ? 0.4 : pressed ? 0.85 : 1 },
+                  ]}
                 >
-                  <LinearGradient
-                    colors={[ACCENT, adjustBrightness(ACCENT, -25)]}
-                    start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
-                    style={s.btn}
-                  >
-                    {loading
-                      ? <ActivityIndicator size="small" color="#fff" />
-                      : <Text style={s.btnText}>Verify Code</Text>
-                    }
-                  </LinearGradient>
+                  {loading
+                    ? <ActivityIndicator size="small" color="#fff" />
+                    : <Text style={s.btnText}>Verify Code</Text>
+                  }
                 </Pressable>
 
                 <View style={s.otpMeta}>
                   <Pressable onPress={handleResend} disabled={cooldown > 0} hitSlop={10}>
-                    <Text style={[s.resendText, cooldown > 0 && { color: 'rgba(255,255,255,0.22)' }]}>
+                    <Text style={[s.resendText, cooldown > 0 && { color: TEXT_DISABLED }]}>
                       {cooldown > 0 ? `Resend in ${cooldown}s` : 'Resend code'}
                     </Text>
                   </Pressable>
-                  <Text style={{ color: 'rgba(255,255,255,0.2)' }}>·</Text>
+                  <Text style={s.otpMetaSep}>·</Text>
                   <Pressable onPress={goBack} hitSlop={10}>
-                    <Text style={{ color: 'rgba(255,255,255,0.35)', fontSize: 13 }}>Change email</Text>
+                    <Text style={s.changeEmailText}>Change email</Text>
                   </Pressable>
                 </View>
               </View>
@@ -418,7 +409,7 @@ export default function LoginScreen() {
               <Pressable onPress={() => router.push('/privacy')} hitSlop={8}>
                 <Text style={s.legalLink}>Privacy Policy</Text>
               </Pressable>
-              <Text style={{ fontSize: 11, color: 'rgba(255,255,255,0.18)' }}>·</Text>
+              <Text style={{ fontSize: 11, color: TEXT_DISABLED }}>·</Text>
               <Pressable onPress={() => router.push('/terms')} hitSlop={8}>
                 <Text style={s.legalLink}>Terms of Service</Text>
               </Pressable>
@@ -456,7 +447,7 @@ const s = StyleSheet.create({
     borderRadius: 999,
     borderWidth: 1,
     borderColor: BORDER,
-    backgroundColor: 'rgba(255,255,255,0.04)',
+    backgroundColor: SURFACE_CONTAINER_LOW,
     paddingHorizontal: 11,
     paddingVertical: 5,
     marginBottom: 28,
@@ -465,13 +456,13 @@ const s = StyleSheet.create({
     width: 6, height: 6, borderRadius: 999, backgroundColor: ACCENT,
   },
   appBadgeText: {
-    fontSize: 11, fontWeight: '600', color: 'rgba(255,255,255,0.5)', letterSpacing: 0.2,
+    fontSize: 11, fontWeight: '600', color: TEXT_TERTIARY, letterSpacing: 0.2,
   },
 
   // Title
   titleBlock: { gap: 10, marginBottom: 28 },
-  titleBold: { fontSize: 30, fontWeight: '800', color: '#fff', letterSpacing: -0.8, lineHeight: 36 },
-  sub: { fontSize: 14, color: 'rgba(255,255,255,0.40)', lineHeight: 20 },
+  titleBold: { fontSize: 30, fontWeight: '800', color: ON_SURFACE, letterSpacing: -0.8, lineHeight: 36 },
+  sub: { fontSize: 14, color: TEXT_TERTIARY, lineHeight: 20 },
 
   emailPill: {
     alignSelf: 'flex-start', borderWidth: 1, borderRadius: 8,
@@ -485,73 +476,79 @@ const s = StyleSheet.create({
 
   // Fields
   fieldGroup: { gap: 8 },
-  label: { fontSize: 11, fontWeight: '700', letterSpacing: 0.8, textTransform: 'uppercase', color: 'rgba(255,255,255,0.30)' },
+  label: { fontSize: 11, fontWeight: '700', letterSpacing: 0.8, textTransform: 'uppercase', color: TEXT_TERTIARY },
   input: {
-    height: 52, backgroundColor: 'rgba(255,255,255,0.06)',
+    height: 52, backgroundColor: SURFACE_CONTAINER_LOW,
     borderWidth: 1, borderColor: BORDER, borderRadius: 14,
-    paddingHorizontal: 16, color: '#fff', fontSize: 16,
+    paddingHorizontal: 16, color: ON_SURFACE, fontSize: 16,
     fontFamily: Fonts.regular,
   },
   inputErr: { borderColor: `${ERROR}66` },
 
   // Buttons
-  btn: { height: 52, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
+  btn: {
+    height: 52, borderRadius: 14, alignItems: 'center', justifyContent: 'center',
+    backgroundColor: PRIMARY,
+  },
   btnText: { color: '#fff', fontSize: 15, fontWeight: '700' },
 
   // Social buttons
   dividerRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   dividerLine: { flex: 1, height: StyleSheet.hairlineWidth, backgroundColor: BORDER },
-  dividerText: { color: 'rgba(255,255,255,0.25)', fontSize: 12 },
+  dividerText: { color: TEXT_TERTIARY, fontSize: 12 },
   socialRow: { flexDirection: 'row', gap: 12 },
   socialBtn: {
     flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
-    height: 50, backgroundColor: SURFACE, borderRadius: 14,
+    height: 50, backgroundColor: SURFACE_ELEVATED, borderRadius: 14,
     borderWidth: 1, borderColor: BORDER,
+    ...SHADOW_SM,
   },
   socialIcon: {
-    width: 22, height: 22, borderRadius: 5, backgroundColor: '#fff',
+    width: 22, height: 22, borderRadius: 5, backgroundColor: SURFACE_CONTAINER_LOW,
     alignItems: 'center', justifyContent: 'center',
   },
-  socialBtnText: { color: '#fff', fontSize: 14, fontWeight: '600' },
+  socialBtnText: { color: ON_SURFACE, fontSize: 14, fontWeight: '600' },
 
   // Error
   errorBox: { borderRadius: 10, borderWidth: 1, paddingHorizontal: 12, paddingVertical: 10 },
 
   // Lockout
   lockoutBox: {
-    backgroundColor: 'rgba(251,191,36,0.08)', borderRadius: 10,
-    borderWidth: 1, borderColor: 'rgba(251,191,36,0.2)',
+    backgroundColor: 'rgba(251,191,36,0.1)', borderRadius: 10,
+    borderWidth: 1, borderColor: 'rgba(251,191,36,0.35)',
     paddingHorizontal: 12, paddingVertical: 10, alignItems: 'center',
   },
-  lockoutText: { color: '#fbbf24', fontSize: 13, fontWeight: '600' },
+  lockoutText: { color: '#b45309', fontSize: 13, fontWeight: '600' },
 
   // OTP
   otpRow: { flexDirection: 'row', justifyContent: 'space-between', gap: 8 },
   otpBox: {
     flex: 1,
-    height: 56, backgroundColor: 'rgba(255,255,255,0.06)',
+    height: 56, backgroundColor: SURFACE_CONTAINER_LOW,
     borderWidth: 1, borderColor: BORDER, borderRadius: 12,
-    color: '#fff', fontSize: 22, textAlign: 'center',
+    color: ON_SURFACE, fontSize: 22, textAlign: 'center',
     textAlignVertical: 'center', paddingVertical: 0, paddingHorizontal: 0,
     includeFontPadding: false,
     fontFamily: Fonts.regular,
   },
   otpBoxOn: { color: ACCENT },
   otpMeta: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10 },
+  otpMetaSep: { color: TEXT_DISABLED, fontSize: 13 },
   resendText: { color: ACCENT, fontSize: 13, fontWeight: '500' },
+  changeEmailText: { color: TEXT_TERTIARY, fontSize: 13 },
 
   // Dev skip
   devSkipBtn: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6,
     alignSelf: 'center',
     marginTop: 20,
-    borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)', borderStyle: 'dashed',
+    borderWidth: 1, borderColor: BORDER, borderStyle: 'dashed',
     borderRadius: 10, paddingHorizontal: 16, paddingVertical: 10,
-    backgroundColor: 'rgba(255,255,255,0.03)',
+    backgroundColor: SURFACE_CONTAINER_LOW,
   },
   devSkipText: { fontSize: 12, color: TEXT_SECONDARY, fontWeight: '500' },
 
   // Legal
   legalRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, marginTop: 'auto', paddingTop: 24 },
-  legalLink: { fontSize: 11, color: 'rgba(255,255,255,0.3)', textDecorationLine: 'underline' },
+  legalLink: { fontSize: 11, color: TEXT_DISABLED, textDecorationLine: 'underline' },
 })

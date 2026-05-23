@@ -2,7 +2,7 @@ import React, { createContext, useContext, useRef, useState, useCallback } from 
 import { Animated, StyleSheet, View } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Text } from '@/components/ui/Text'
-import { SURFACE2, SUCCESS, ERROR, ACCENT, BORDER, TAB_HEIGHT } from '@/lib/theme'
+import { SURFACE_CONTAINER_HIGHEST, SUCCESS, ERROR, ACCENT, BORDER, TAB_HEIGHT, ON_SURFACE, SHADOW_SM } from '@/lib/theme'
 
 export type ToastType = 'success' | 'error' | 'info'
 
@@ -110,17 +110,13 @@ const s = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         gap: 10,
-        backgroundColor: SURFACE2,
+        backgroundColor: SURFACE_CONTAINER_HIGHEST,
         borderWidth: 1,
         borderColor: BORDER,
         borderRadius: 12,
         paddingHorizontal: 14,
         paddingVertical: 12,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.3,
-        shadowRadius: 10,
-        elevation: 8,
+        ...SHADOW_SM,
     },
     dot: {
         width: 8,
@@ -131,7 +127,7 @@ const s = StyleSheet.create({
     message: {
         flex: 1,
         fontSize: 13.5,
-        color: '#fff',
+        color: ON_SURFACE,
         fontWeight: '500',
         lineHeight: 19,
     },
