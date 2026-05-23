@@ -7,7 +7,7 @@
  * the screens registered here.
  */
 import { Tabs } from 'expo-router'
-import { House, Compass, Bell, CircleUser } from 'lucide-react-native'
+import { House, TrendingUp, Users, CircleUser } from 'lucide-react-native'
 import TabBar, { TAB_BAR_HEIGHT } from '@/components/TabBar'
 import { BG } from '@/lib/theme'
 
@@ -18,7 +18,6 @@ export default function TabsLayout() {
       screenOptions={{
         headerShown: false,
         sceneStyle: { backgroundColor: BG },
-        // Extra bottom padding so content clears the floating tab bar
         tabBarStyle: { height: TAB_BAR_HEIGHT },
       }}
     >
@@ -35,9 +34,9 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="explore"
         options={{
-          tabBarLabel: 'Explore',
+          tabBarLabel: 'Progress',
           tabBarIcon: ({ color, size }) => (
-            <Compass size={size} color={color} strokeWidth={1.6} />
+            <TrendingUp size={size} color={color} strokeWidth={1.6} />
           ),
         }}
       />
@@ -45,9 +44,9 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="activity"
         options={{
-          tabBarLabel: 'Activity',
+          tabBarLabel: 'Groups',
           tabBarIcon: ({ color, size }) => (
-            <Bell size={size} color={color} strokeWidth={1.6} />
+            <Users size={size} color={color} strokeWidth={1.6} />
           ),
         }}
       />

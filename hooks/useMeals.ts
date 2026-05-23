@@ -287,22 +287,26 @@ export function useWeeklyMeals() {
         ? await fetchAllSupabaseMeals()
         : await getLocalMeals()
 
-      // Group calories by last 7 days
+      // Group calories and macros by last 7 days
       const days = []
       for (let i = 6; i >= 0; i--) {
         const d = new Date()
         d.setDate(d.getDate() - i)
         const dateStr = d.toISOString().split('T')[0]
         
-        // Sum calories for this date
-        const calories = allMeals
-          .filter((m) => m.loggedAt.split('T')[0] === dateStr)
-          .reduce((sum, m) => sum + m.calories, 0)
+        const dayMeals = allMeals.filter((m) => m.loggedAt.split('T')[0] === dateStr)
+        const calories = dayMeals.reduce((sum, m) => sum + m.calories, 0)
+        const protein = dayMeals.reduce((sum, m) => sum + m.protein, 0)
+        const carbs = dayMeals.reduce((sum, m) => sum + m.carbs, 0)
+        const fat = dayMeals.reduce((sum, m) => sum + m.fat, 0)
         
         days.push({
           dateStr,
           dayName: d.toLocaleDateString('en-US', { weekday: 'short' }),
           calories,
+          protein,
+          carbs,
+          fat,
         })
       }
       return days

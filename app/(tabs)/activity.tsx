@@ -1,187 +1,202 @@
-import { useMemo, useState, useEffect } from 'react'
+import { useState } from 'react'
 import { View, ScrollView, StyleSheet, Pressable } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Ionicons } from '@expo/vector-icons'
 import { Text } from '@/components/ui/Text'
 import { Card } from '@/components/ui/Card'
 import {
-    ACCENT,
     BG,
+    SURFACE,
+    SURFACE2,
     BORDER,
     TEXT_PRIMARY,
     TEXT_SECONDARY,
     TEXT_TERTIARY,
+    SUCCESS,
+    ENERGY_ORANGE,
 } from '@/lib/theme'
 import { TAB_BAR_CLEARANCE } from '@/components/TabBar'
-import { useNotifications } from '@/hooks/useNotifications'
-import type { NotificationItem } from '@/lib/mockData'
 
-type TabType = 'all' | 'unread'
-
-export default function ActivityScreen() {
+export default function GroupsScreen() {
     const insets = useSafeAreaInsets()
-    const [activeTab, setActiveTab] = useState<TabType>('all')
-    const { data: remoteItems = [] } = useNotifications()
-    const [items, setItems] = useState<NotificationItem[]>(remoteItems)
 
-    // Sync local state when remote data arrives
-    useEffect(() => {
-        if (remoteItems.length > 0) setItems(remoteItems)
-    }, [remoteItems])
-
-    const visibleItems = useMemo(() => {
-        if (activeTab === 'all') return items
-        return items.filter((item) => !item.read)
-    }, [activeTab, items])
-
-    const unreadCount = useMemo(() => items.filter((item) => !item.read).length, [items])
-
-    const markAllRead = () => {
-        setItems((prev) => prev.map((item) => ({ ...item, read: true })))
-    }
-
-    const toggleRead = (id: string) => {
-        setItems((prev) => prev.map((item) => item.id === id ? { ...item, read: !item.read } : item))
-    }
+    const mockGroups = [
+        {
+            id: '1',
+            name: 'Office Wellness Challenge',
+            members: 12,
+            icon: 'people',
+            streak: 15,
+            description: 'Stay healthy with your team!',
+        },
+        {
+            id: '2',
+            name: 'Family Nutrition',
+            members: 5,
+            icon: 'home',
+            streak: 8,
+            description: 'Track meals together as a family.',
+        },
+        {
+            id: '3',
+            name: 'Gym Buddies',
+            members: 8,
+            icon: 'barbell',
+            streak: 22,
+            description: 'Protein goals and workout fuel.',
+        },
+    ]
 
     return (
         <ScrollView
             style={{ flex: 1, backgroundColor: BG }}
-            contentContainerStyle={[s.container, { paddingTop: insets.top + 16, paddingBottom: TAB_BAR_CLEARANCE + 16 }]}
+            contentContainerStyle={[
+                s.container,
+                { paddingTop: insets.top + 16, paddingBottom: TAB_BAR_CLEARANCE + 16 },
+            ]}
             showsVerticalScrollIndicator={false}
         >
             <View style={s.header}>
-                <View>
-                    <Text style={s.title}>Activity</Text>
-                    <Text style={s.subtitle}>Product updates, team events, and billing alerts.</Text>
-                </View>
-
-                <Pressable onPress={markAllRead} style={({ pressed }) => [s.markAllBtn, pressed && { opacity: 0.75 }]}
-                >
-                    <Text style={s.markAllText}>Mark all read</Text>
-                </Pressable>
+                <Text style={s.title}>Groups</Text>
+                <Text style={s.subtitle}>Track progress together with friends and family.</Text>
             </View>
 
-            <View style={s.segmentRow}>
-                <Pressable
-                    onPress={() => setActiveTab('all')}
-                    style={[s.segmentItem, activeTab === 'all' && s.segmentItemActive]}
-                >
-                    <Text style={[s.segmentText, activeTab === 'all' && s.segmentTextActive]}>All ({items.length})</Text>
-                </Pressable>
-                <Pressable
-                    onPress={() => setActiveTab('unread')}
-                    style={[s.segmentItem, activeTab === 'unread' && s.segmentItemActive]}
-                >
-                    <Text style={[s.segmentText, activeTab === 'unread' && s.segmentTextActive]}>Unread ({unreadCount})</Text>
-                </Pressable>
-            </View>
-
-            {visibleItems.length === 0 ? (
-                <Card style={s.emptyCard}>
-                    <Text style={s.emptyTitle}>You are all caught up</Text>
-                    <Text style={s.emptySub}>New alerts and updates will appear here.</Text>
-                </Card>
-            ) : (
-                <Card style={s.listCard}>
-                    {visibleItems.map((item, index) => (
-                        <Pressable
-                            key={item.id}
-                            onPress={() => toggleRead(item.id)}
-                            style={[s.row, index < visibleItems.length - 1 && s.rowDivider]}
-                        >
-                            <View style={[s.iconWrap, item.read && s.iconWrapMuted]}>
-                                <Ionicons name={categoryIcon(item.category)} size={14} color={item.read ? TEXT_SECONDARY : ACCENT} />
+            {/* Groups List */}
+            {mockGroups.map((group) => (
+                <Card key={group.id} style={s.groupCard}>
+                    <View style={s.groupRow}>
+                        <View style={s.groupIconWrap}>
+                            <Ionicons
+                                name={group.icon as keyof typeof Ionicons.glyphMap}
+                                size={22}
+                                color={TEXT_PRIMARY}
+                            />
+                        </View>
+                        <View style={s.groupContent}>
+                            <Text style={s.groupName}>{group.name}</Text>
+                            <Text style={s.groupDesc}>{group.description}</Text>
+                            <View style={s.groupMeta}>
+                                <View style={s.groupMetaItem}>
+                                    <Ionicons name="people-outline" size={14} color={TEXT_SECONDARY} />
+                                    <Text style={s.groupMetaText}>{group.members} members</Text>
+                                </View>
+                                <View style={s.groupMetaItem}>
+                                    <Ionicons name="flame" size={14} color={ENERGY_ORANGE} />
+                                    <Text style={s.groupMetaText}>{group.streak} day streak</Text>
+                                </View>
                             </View>
-
-                            <View style={{ flex: 1 }}>
-                                <Text style={[s.rowTitle, item.read && s.rowTitleMuted]}>{item.title}</Text>
-                                <Text style={s.rowBody}>{item.body}</Text>
-                                <Text style={s.rowTime}>{item.timeAgo}</Text>
-                            </View>
-
-                            {!item.read && <View style={s.unreadDot} />}
-                        </Pressable>
-                    ))}
+                        </View>
+                        <Ionicons name="chevron-forward" size={18} color={TEXT_TERTIARY} />
+                    </View>
                 </Card>
-            )}
+            ))}
+
+            {/* Create Group Button */}
+            <Pressable
+                style={({ pressed }) => [s.createBtn, pressed && { opacity: 0.85 }]}
+            >
+                <Ionicons name="add-circle-outline" size={20} color="#fff" />
+                <Text style={s.createBtnText}>Create New Group</Text>
+            </Pressable>
+
+            {/* Empty state info */}
+            <Card style={s.infoCard}>
+                <Ionicons name="information-circle-outline" size={20} color={SUCCESS} />
+                <Text style={s.infoText}>
+                    Invite friends to a group to compare daily calorie goals, share meals, and stay motivated together.
+                </Text>
+            </Card>
         </ScrollView>
     )
 }
 
-function categoryIcon(category: 'billing' | 'system' | 'product' | 'team') {
-    switch (category) {
-        case 'billing':
-            return 'wallet-outline'
-        case 'system':
-            return 'server-outline'
-        case 'product':
-            return 'sparkles-outline'
-        case 'team':
-            return 'people-outline'
-        default:
-            return 'ellipse-outline'
-    }
-}
-
 const s = StyleSheet.create({
-    container: { paddingHorizontal: 20, gap: 12 },
-    header: { flexDirection: 'row', justifyContent: 'space-between', gap: 12, alignItems: 'flex-start' },
-    title: { fontSize: 24, fontWeight: '800', color: TEXT_PRIMARY, letterSpacing: -0.5 },
-    subtitle: { marginTop: 3, fontSize: 13, color: TEXT_SECONDARY },
-    markAllBtn: {
-        borderWidth: 1,
-        borderColor: BORDER,
-        backgroundColor: 'rgba(255,255,255,0.05)',
-        paddingHorizontal: 10,
-        paddingVertical: 7,
-        borderRadius: 9,
+    container: { paddingHorizontal: 20, gap: 16 },
+    header: { gap: 4, marginBottom: 4 },
+    title: {
+        fontSize: 24,
+        fontWeight: '800',
+        color: TEXT_PRIMARY,
+        letterSpacing: -0.5,
     },
-    markAllText: { fontSize: 12, color: TEXT_PRIMARY, fontWeight: '600' },
-    segmentRow: {
+    subtitle: {
+        fontSize: 13,
+        color: TEXT_SECONDARY,
+    },
+    groupCard: {
+        padding: 16,
+    },
+    groupRow: {
         flexDirection: 'row',
-        backgroundColor: 'rgba(255,255,255,0.05)',
-        borderWidth: 1,
-        borderColor: BORDER,
-        borderRadius: 11,
-        padding: 3,
-    },
-    segmentItem: {
-        flex: 1,
-        borderRadius: 8,
         alignItems: 'center',
-        paddingVertical: 7,
+        gap: 14,
     },
-    segmentItemActive: {
-        backgroundColor: 'rgba(255,255,255,0.14)',
-    },
-    segmentText: { fontSize: 12, color: TEXT_SECONDARY, fontWeight: '600' },
-    segmentTextActive: { color: TEXT_PRIMARY },
-    emptyCard: { alignItems: 'center', gap: 5, paddingVertical: 26 },
-    emptyTitle: { fontSize: 15, color: TEXT_PRIMARY, fontWeight: '700' },
-    emptySub: { fontSize: 13, color: TEXT_SECONDARY },
-    listCard: { paddingVertical: 2, paddingHorizontal: 0 },
-    row: { flexDirection: 'row', alignItems: 'flex-start', gap: 10, paddingHorizontal: 12, paddingVertical: 11 },
-    rowDivider: { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: BORDER },
-    iconWrap: {
-        width: 28,
-        height: 28,
-        borderRadius: 8,
+    groupIconWrap: {
+        width: 44,
+        height: 44,
+        borderRadius: 12,
+        backgroundColor: SURFACE2,
         alignItems: 'center',
         justifyContent: 'center',
-        marginTop: 1,
-        backgroundColor: 'rgba(255,255,255,0.10)',
+        borderWidth: 1,
+        borderColor: BORDER,
     },
-    iconWrapMuted: { backgroundColor: 'rgba(255,255,255,0.05)' },
-    rowTitle: { fontSize: 13.5, color: TEXT_PRIMARY, fontWeight: '700' },
-    rowTitleMuted: { color: TEXT_SECONDARY },
-    rowBody: { marginTop: 1, fontSize: 12.5, lineHeight: 18, color: TEXT_SECONDARY },
-    rowTime: { marginTop: 5, fontSize: 11, color: TEXT_TERTIARY },
-    unreadDot: {
-        width: 7,
-        height: 7,
+    groupContent: {
+        flex: 1,
+        gap: 4,
+    },
+    groupName: {
+        fontSize: 15,
+        fontWeight: '700',
+        color: TEXT_PRIMARY,
+    },
+    groupDesc: {
+        fontSize: 12,
+        color: TEXT_SECONDARY,
+    },
+    groupMeta: {
+        flexDirection: 'row',
+        gap: 16,
+        marginTop: 4,
+    },
+    groupMetaItem: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 4,
+    },
+    groupMetaText: {
+        fontSize: 11,
+        fontWeight: '600',
+        color: TEXT_SECONDARY,
+    },
+    createBtn: {
+        backgroundColor: TEXT_PRIMARY,
+        paddingVertical: 14,
         borderRadius: 999,
-        marginTop: 6,
-        backgroundColor: ACCENT,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 8,
+        marginTop: 4,
+    },
+    createBtnText: {
+        fontSize: 14,
+        fontWeight: '600',
+        color: '#fff',
+    },
+    infoCard: {
+        flexDirection: 'row',
+        alignItems: 'flex-start',
+        gap: 12,
+        padding: 16,
+        backgroundColor: 'rgba(52, 199, 89, 0.06)',
+        borderWidth: 1,
+        borderColor: 'rgba(52, 199, 89, 0.15)',
+    },
+    infoText: {
+        flex: 1,
+        fontSize: 12.5,
+        color: SUCCESS,
+        lineHeight: 18,
     },
 })
