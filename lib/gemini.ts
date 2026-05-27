@@ -7,81 +7,25 @@ export interface FoodAnalysisResult {
   carbs: number
   fat: number
   description: string
+  servingSize: string
+  confidence: number
 }
 
 export const isGeminiEnabled = !!GEMINI_API_KEY
 
-// A list of realistic mock items for simulated fallback
-const mockFoods: FoodAnalysisResult[] = [
-  {
-    name: 'Grilled Salmon & Quinoa Bowl',
-    calories: 520,
-    protein: 38,
-    carbs: 42,
-    fat: 22,
-    description: 'Fresh grilled salmon fillet over red quinoa with steamed broccoli, avocado slices, and lemon vinaigrette.',
-  },
-  {
-    name: 'Avocado Egg Toast',
-    calories: 340,
-    protein: 14,
-    carbs: 24,
-    fat: 18,
-    description: 'Sourdough toast topped with mashed avocado, two soft-boiled eggs, cherry tomatoes, and chili flakes.',
-  },
-  {
-    name: 'Grilled Chicken & Rice',
-    calories: 460,
-    protein: 42,
-    carbs: 52,
-    fat: 8,
-    description: 'Lean chicken breast grilled with herbs, served with brown rice and mixed roasted bell peppers.',
-  },
-  {
-    name: 'Protein Berry Smoothie Bowl',
-    calories: 290,
-    protein: 18,
-    carbs: 45,
-    fat: 5,
-    description: 'Blended banana and mixed berries with vanilla protein powder, topped with chia seeds, granola, and honey.',
-  },
-  {
-    name: 'Double Cheeseburger & Fries',
-    calories: 890,
-    protein: 36,
-    carbs: 88,
-    fat: 44,
-    description: 'Indulgent double beef patty cheeseburger on a brioche bun, served with a side of salted french fries.',
-  },
-  {
-    name: 'Greek Yogurt Parfait',
-    calories: 210,
-    protein: 17,
-    carbs: 28,
-    fat: 3,
-    description: 'Non-fat Greek yogurt layered with organic blueberries, strawberries, and a sprinkle of raw walnuts.',
-  },
-  {
-    name: 'Garden Salad with Vinaigrette',
-    calories: 150,
-    protein: 3,
-    carbs: 12,
-    fat: 10,
-    description: 'Mixed greens, cucumber, carrots, red onion, and olive oil balsamic dressing.',
-  },
-]
-
-/**
- * Analyzes a base64 encoded food image using Gemini 1.5 Flash (if API key is present)
- * or returns a simulated classification result after a brief delay.
- */
 export async function analyzeFoodImage(base64Image: string, mimeType: string = 'image/jpeg'): Promise<FoodAnalysisResult> {
   if (!isGeminiEnabled) {
-    // Simulate API delay
     await new Promise((resolve) => setTimeout(resolve, 2000))
-    // Return a random food from mock list
-    const randomIndex = Math.floor(Math.random() * mockFoods.length)
-    return mockFoods[randomIndex]
+    return {
+      name: 'Home-cooked Meal',
+      calories: 420,
+      protein: 28,
+      carbs: 35,
+      fat: 18,
+      description: 'AI analysis simulation enabled when Gemini API key is configured.',
+      servingSize: '1 plate (~300g)',
+      confidence: 0.7,
+    }
   }
 
   try {
@@ -89,28 +33,51 @@ export async function analyzeFoodImage(base64Image: string, mimeType: string = '
       `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`,
       {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          contents: [
-            {
-              parts: [
-                {
-                  text: 'Identify the food item(s) in this photo and estimate its nutritional content. Return ONLY a JSON object matching this schema:\n{\n  "name": "string (e.g., Avocado Toast with Egg)",\n  "calories": number (in kcal),\n  "protein": number (in grams),\n  "carbs": number (in grams),\n  "fat": number (in grams),\n  "description": "string (brief description of estimation and ingredients)"\n}'
+          contents: [{
+            parts: [
+              {
+                text: `You are a professional nutritionist AI. Analyze the food in this photo and return precise nutritional estimates.
+
+CRITICAL: Return ONLY valid JSON matching this exact schema:
+{
+  "name": "Name of the dish/meal",
+  "calories": total estimated calories (number),
+  "protein": protein in grams (number),
+  "carbs": carbohydrates in grams (number),
+  "fat": fat in grams (number),
+  "description": "Brief description of ingredients and preparation method",
+  "servingSize": "Estimated serving size (e.g., '1 bowl ~250g')",
+  "confidence": confidence level 0-1 (number, based on how clearly the food is visible)
+}
+
+Guidelines for accuracy:
+- Be conservative with portion size estimates - default to 1 standard serving
+- If the image is unclear or has multiple items, estimate the main dish only
+- Use standard nutritional databases (USDA) for reference values
+- Round values to nearest 5 for calories, nearest gram for macros
+- If you cannot identify any food, set confidence to 0.1 and use name "Unknown Food"`
+              },
+              {
+                inlineData: {
+                  mimeType: mimeType,
+                  data: base64Image,
                 },
-                {
-                  inlineData: {
-                    mimeType: mimeType,
-                    data: base64Image,
-                  },
-                },
-              ],
-            },
-          ],
+              },
+            ],
+          }],
           generationConfig: {
             responseMimeType: 'application/json',
+            temperature: 0.2,
+            topP: 0.95,
           },
+          safetySettings: [
+            { category: 'HARM_CATEGORY_HARASSMENT', threshold: 'BLOCK_NONE' },
+            { category: 'HARM_CATEGORY_HATE_SPEECH', threshold: 'BLOCK_NONE' },
+            { category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT', threshold: 'BLOCK_NONE' },
+            { category: 'HARM_CATEGORY_DANGEROUS_CONTENT', threshold: 'BLOCK_NONE' },
+          ],
         }),
       }
     )
@@ -128,19 +95,25 @@ export async function analyzeFoodImage(base64Image: string, mimeType: string = '
     const parsed: FoodAnalysisResult = JSON.parse(textResult.trim())
     return {
       name: parsed.name ?? 'Unknown Meal',
-      calories: typeof parsed.calories === 'number' ? Math.round(parsed.calories) : 0,
+      calories: typeof parsed.calories === 'number' ? Math.round(parsed.calories / 5) * 5 : 0,
       protein: typeof parsed.protein === 'number' ? Math.round(parsed.protein) : 0,
       carbs: typeof parsed.carbs === 'number' ? Math.round(parsed.carbs) : 0,
       fat: typeof parsed.fat === 'number' ? Math.round(parsed.fat) : 0,
       description: parsed.description ?? 'AI analysis completed.',
+      servingSize: parsed.servingSize ?? '1 serving',
+      confidence: typeof parsed.confidence === 'number' ? Math.max(0, Math.min(1, parsed.confidence)) : 0.5,
     }
   } catch (error) {
     console.error('[Gemini AI] Error during food image analysis:', error)
-    // Fallback to local mock on failure
-    const fallback = mockFoods[0]
     return {
-      ...fallback,
-      description: `[AI Fallback Mode] Analysis failed: ${error instanceof Error ? error.message : String(error)}. Showing simulated breakdown.`,
+      name: 'Unknown Food',
+      calories: 0,
+      protein: 0,
+      carbs: 0,
+      fat: 0,
+      description: `AI analysis failed: ${error instanceof Error ? error.message : String(error)}.`,
+      servingSize: 'N/A',
+      confidence: 0,
     }
   }
 }

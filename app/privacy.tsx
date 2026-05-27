@@ -24,34 +24,60 @@ export default function PrivacyScreen() {
             >
                 <Text style={s.updated}>Last updated: {new Date().toLocaleDateString()}</Text>
 
-                <Text style={s.heading}>Overview</Text>
+                <Text style={s.heading}>1. Information We Collect</Text>
                 <Text style={s.paragraph}>
-                    This template application is provided for demonstration purposes. Data shown across the app can be mock data,
-                    sample analytics, or developer-provided environment values.
+                    Calora collects information you provide when creating an account and using our service, including:
+                    {'\n'}• Email address and display name
+                    {'\n'}• Meal photos and nutritional data you log
+                    {'\n'}• Weight measurements you choose to record
+                    {'\n'}• Subscription and payment information (processed securely through RevenueCat)
+                    {'\n'}• Device information for push notification delivery
                 </Text>
 
-                <Text style={s.heading}>Data We May Process</Text>
+                <Text style={s.heading}>2. How We Use Your Data</Text>
                 <Text style={s.paragraph}>
-                    Depending on how you configure this template, your production app may process account identifiers,
-                    product usage events, subscription status, and support inquiries.
+                    Your data is used exclusively to provide and improve the Calora service:
+                    {'\n'}• Analyze meal photos using AI to estimate nutritional content
+                    {'\n'}• Track your daily nutrition and weight progress over time
+                    {'\n'}• Send you streak reminders and goal achievement notifications
+                    {'\n'}• Generate weekly email summaries (if enabled)
+                    {'\n'}• Process subscription payments and manage entitlements
                 </Text>
 
-                <Text style={s.heading}>How Data Is Used</Text>
+                <Text style={s.heading}>3. AI Photo Analysis</Text>
                 <Text style={s.paragraph}>
-                    Typical use cases include account authentication, feature personalization, billing state checks,
-                    and improving product quality through aggregate analytics.
+                    Meal photos are sent to Google's Gemini API for nutritional analysis. Images are processed in real-time
+                    and are not stored by the AI provider. Calora stores meal photos only if you choose to save them as
+                    part of your meal log.
                 </Text>
 
-                <Text style={s.heading}>Third-Party Services</Text>
+                <Text style={s.heading}>4. Data Storage & Security</Text>
                 <Text style={s.paragraph}>
-                    This starter may integrate with providers like authentication backends, subscription platforms,
-                    and analytics services. Review each provider's privacy policy before publishing.
+                    Your data is stored securely in Supabase (PostgreSQL) with row-level security ensuring you can only
+                    access your own data. We use industry-standard encryption for data in transit (TLS) and at rest.
+                    Authentication is handled through Supabase Auth with PKCE flow for secure session management.
                 </Text>
 
-                <Text style={s.heading}>Your Responsibility Before Launch</Text>
+                <Text style={s.heading}>5. Third-Party Services</Text>
                 <Text style={s.paragraph}>
-                    Replace this document with your legal policy, verify regional compliance requirements,
-                    and keep your final policy URL available inside app settings.
+                    Calora integrates with the following third-party services:
+                    {'\n'}• Supabase – Authentication and database hosting
+                    {'\n'}• Google Gemini AI – Meal photo analysis
+                    {'\n'}• RevenueCat – Subscription management and payments
+                    {'\n'}• Sentry – Crash reporting and error monitoring
+                    {'\n'}• PostHog – Anonymous product analytics
+                </Text>
+
+                <Text style={s.heading}>6. Your Rights</Text>
+                <Text style={s.paragraph}>
+                    You can request access to, correction of, or deletion of your personal data at any time by
+                    contacting support@calora.app. You may also export your data or delete your account through
+                    the app settings.
+                </Text>
+
+                <Text style={s.heading}>7. Contact</Text>
+                <Text style={s.paragraph}>
+                    For privacy-related inquiries, contact us at support@calora.app.
                 </Text>
             </ScrollView>
         </View>

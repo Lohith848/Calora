@@ -1,6 +1,7 @@
-import { useMemo, useState, useEffect } from 'react'
-import { View, ScrollView, StyleSheet, Pressable } from 'react-native'
+import { useMemo, useState } from 'react'
+import { View, ScrollView, StyleSheet, Pressable, RefreshControl } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
+import { useQueryClient } from '@tanstack/react-query'
 import { Ionicons } from '@expo/vector-icons'
 import { Text } from '@/components/ui/Text'
 import { Card } from '@/components/ui/Card'
@@ -19,36 +20,61 @@ import {
     TEXT_TERTIARY,
     BG,
     BORDER,
+    SUCCESS,
 } from '@/lib/theme'
 import { TAB_BAR_CLEARANCE } from '@/components/TabBar'
-import { useNotifications } from '@/hooks/useNotifications'
-import type { NotificationItem } from '@/lib/mockData'
+import { useNotifications, useMarkAllNotificationsRead, useMarkNotificationRead, type AppNotification } from '@/hooks/useNotifications'
+import { useStreak } from '@/hooks/useStreaks'
+import { useWeeklyMeals } from '@/hooks/useMeals'
+import { useGoals } from '@/hooks/useGoals'
 
 type TabType = 'all' | 'unread'
 
 export default function ActivityScreen() {
     const insets = useSafeAreaInsets()
+    const queryClient = useQueryClient()
     const [activeTab, setActiveTab] = useState<TabType>('all')
-    const { data: remoteItems = [] } = useNotifications()
-    const [items, setItems] = useState<NotificationItem[]>(remoteItems)
+    const [refreshing, setRefreshing] = useState(false)
 
-    useEffect(() => {
-        if (remoteItems.length > 0) setItems(remoteItems)
-    }, [remoteItems])
+    const { data: notifications = [] } = useNotifications()
+    const { data: streak = 0 } = useStreak()
+    const { data: weeklyDays = [] } = useWeeklyMeals()
+    const { data: goals } = useGoals()
+    const markRead = useMarkNotificationRead()
+    const markAllRead = useMarkAllNotificationsRead()
+
+    const calorieGoal = goals?.calories ?? 2000
+
+    const stats = useMemo(() => {
+        const activeDays = weeklyDays.filter((d) => d.calories > 0).length
+        const highest = weeklyDays.reduce((max, d) => Math.max(max, d.calories), 0)
+        const goalDays = weeklyDays.filter((d) => d.calories > 0 && d.calories <= calorieGoal).length
+        return { activeDays, highest, goalDays }
+    }, [weeklyDays, calorieGoal])
 
     const visibleItems = useMemo(() => {
-        if (activeTab === 'all') return items
-        return items.filter((item) => !item.read)
-    }, [activeTab, items])
+        if (activeTab === 'all') return notifications
+        return notifications.filter((item) => !item.read)
+    }, [activeTab, notifications])
 
-    const unreadCount = useMemo(() => items.filter((item) => !item.read).length, [items])
+    const unreadCount = useMemo(() => notifications.filter((item) => !item.read).length, [notifications])
 
-    const markAllRead = () => {
-        setItems((prev) => prev.map((item) => ({ ...item, read: true })))
+    const handleMarkAllRead = async () => {
+        await markAllRead.mutateAsync()
     }
 
-    const toggleRead = (id: string) => {
-        setItems((prev) => prev.map((item) => item.id === id ? { ...item, read: !item.read } : item))
+    const handleToggleRead = async (id: string) => {
+        await markRead.mutateAsync(id)
+    }
+
+    const onRefresh = async () => {
+        setRefreshing(true)
+        await Promise.all([
+            queryClient.invalidateQueries({ queryKey: ['notifications'] }),
+            queryClient.invalidateQueries({ queryKey: ['streak'] }),
+            queryClient.invalidateQueries({ queryKey: ['meals-weekly'] }),
+        ])
+        setRefreshing(false)
     }
 
     return (
@@ -56,24 +82,51 @@ export default function ActivityScreen() {
             style={{ flex: 1, backgroundColor: BG }}
             contentContainerStyle={[s.container, { paddingTop: insets.top + 16, paddingBottom: TAB_BAR_CLEARANCE + 16 }]}
             showsVerticalScrollIndicator={false}
+            refreshControl={
+                <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={PRIMARY} />
+            }
         >
             <View style={s.header}>
-                <View>
+                <View style={{ flex: 1 }}>
                     <Text style={s.title}>Activity</Text>
-                    <Text style={s.subtitle}>Product updates, team events, and billing alerts.</Text>
+                    <Text style={s.subtitle}>Your streak progress, goal achievements, and system alerts.</Text>
                 </View>
-
-                <Pressable onPress={markAllRead} style={({ pressed }) => [s.markAllBtn, pressed && { opacity: 0.75 }]}>
-                    <Text style={s.markAllText}>Mark all read</Text>
-                </Pressable>
+                {unreadCount > 0 && (
+                    <Pressable onPress={handleMarkAllRead} style={({ pressed }) => [s.markAllBtn, pressed && { opacity: 0.75 }]}>
+                        <Text style={s.markAllText}>Mark all read</Text>
+                    </Pressable>
+                )}
             </View>
 
+            {/* Weekly Stats Summary */}
+            <Card style={s.statsCard}>
+                <View style={s.statsRow}>
+                    <View style={s.stat}>
+                        <Text style={s.statValue}>{streak}</Text>
+                        <Text style={s.statLabel}>Day Streak</Text>
+                    </View>
+                    <View style={s.statDivider} />
+                    <View style={s.stat}>
+                        <Text style={s.statValue}>{stats.activeDays}/7</Text>
+                        <Text style={s.statLabel}>Days Logged</Text>
+                    </View>
+                    <View style={s.statDivider} />
+                    <View style={s.stat}>
+                        <Text style={s.statValue}>
+                            {stats.activeDays > 0 ? Math.round((stats.goalDays / stats.activeDays) * 100) : 0}%
+                        </Text>
+                        <Text style={s.statLabel}>Goal Accuracy</Text>
+                    </View>
+                </View>
+            </Card>
+
+            {/* Segment Tabs */}
             <View style={s.segmentRow}>
                 <Pressable
                     onPress={() => setActiveTab('all')}
                     style={[s.segmentItem, activeTab === 'all' && s.segmentItemActive]}
                 >
-                    <Text style={[s.segmentText, activeTab === 'all' && s.segmentTextActive]}>All ({items.length})</Text>
+                    <Text style={[s.segmentText, activeTab === 'all' && s.segmentTextActive]}>All ({notifications.length})</Text>
                 </Pressable>
                 <Pressable
                     onPress={() => setActiveTab('unread')}
@@ -86,18 +139,22 @@ export default function ActivityScreen() {
             {visibleItems.length === 0 ? (
                 <Card style={s.emptyCard}>
                     <Text style={s.emptyTitle}>You are all caught up</Text>
-                    <Text style={s.emptySub}>New alerts and updates will appear here.</Text>
+                    <Text style={s.emptySub}>Start logging meals to get streak updates and goal notifications.</Text>
                 </Card>
             ) : (
                 <Card style={s.listCard}>
                     {visibleItems.map((item, index) => (
                         <Pressable
                             key={item.id}
-                            onPress={() => toggleRead(item.id)}
+                            onPress={() => handleToggleRead(item.id)}
                             style={[s.row, index < visibleItems.length - 1 && s.rowDivider]}
                         >
                             <View style={[s.iconWrap, item.read && s.iconWrapMuted]}>
-                                <Ionicons name={categoryIcon(item.category)} size={14} color={item.read ? TEXT_SECONDARY : PRIMARY} />
+                                <Ionicons
+                                    name={categoryIcon(item.category)}
+                                    size={14}
+                                    color={item.read ? TEXT_SECONDARY : PRIMARY}
+                                />
                             </View>
 
                             <View style={{ flex: 1 }}>
@@ -115,26 +172,33 @@ export default function ActivityScreen() {
     )
 }
 
-function categoryIcon(category: 'billing' | 'system' | 'product' | 'team') {
+function categoryIcon(category: AppNotification['category']) {
     switch (category) {
-        case 'billing':
-            return 'wallet-outline'
+        case 'streak':
+            return 'flame-outline'
+        case 'daily':
+            return 'sunny-outline'
+        case 'goal':
+            return 'trophy-outline'
         case 'system':
-            return 'server-outline'
-        case 'product':
-            return 'sparkles-outline'
-        case 'team':
-            return 'people-outline'
         default:
-            return 'ellipse-outline'
+            return 'server-outline'
     }
 }
 
 const s = StyleSheet.create({
     container: { paddingHorizontal: 20, gap: 12 },
-    header: { flexDirection: 'row', justifyContent: 'space-between', gap: 12, alignItems: 'flex-start' },
+    header: { flexDirection: 'row', justifyContent: 'space-between', gap: 12, alignItems: 'flex-start', flexShrink: 0 },
     title: { fontSize: 28, fontWeight: '800', color: ON_SURFACE, letterSpacing: -0.5 },
     subtitle: { marginTop: 4, fontSize: 13, color: ON_SURFACE_VARIANT, lineHeight: 18 },
+
+    statsCard: { padding: 16 },
+    statsRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-around' },
+    stat: { alignItems: 'center', gap: 4 },
+    statValue: { fontSize: 22, fontWeight: '800', color: TEXT_PRIMARY },
+    statLabel: { fontSize: 11, color: TEXT_TERTIARY, fontWeight: '600' },
+    statDivider: { width: 1, height: 36, backgroundColor: BORDER },
+
     markAllBtn: {
         borderWidth: 1,
         borderColor: ACCENT_BORDER,

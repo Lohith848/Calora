@@ -216,7 +216,7 @@ export default function LoginScreen() {
         // _layout.tsx auth guard handles navigation automatically
       }
     } catch (e: any) {
-      setError(e?.message ?? `${provider === 'google' ? 'Google' : 'Apple'} sign-in failed.`)
+      console.warn(`[OAuth] ${provider} sign-in failed:`, e?.message)
     } finally {
       setLoading(false)
     }

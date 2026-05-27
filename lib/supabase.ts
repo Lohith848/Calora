@@ -8,7 +8,6 @@ const SUPABASE_KEY =
   process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY ??
   ''
 
-/** True when Supabase credentials are present. Auth/DB calls are no-ops when false. */
 export const isSupabaseEnabled = !!SUPABASE_URL && !!SUPABASE_KEY
 
 if (!isSupabaseEnabled) {
@@ -27,17 +26,20 @@ export const supabase = createClient(
       autoRefreshToken: isSupabaseEnabled,
       persistSession: isSupabaseEnabled,
       detectSessionInUrl: false,
+      flowType: 'pkce',
     },
-    // Disable realtime entirely when unconfigured — prevents WebSocket errors
     realtime: isSupabaseEnabled ? undefined : { params: { eventsPerSecond: 0 } },
     global: {
-      // Suppress fetch errors when Supabase is not configured
-      fetch: isSupabaseEnabled ? undefined : () => Promise.resolve(new Response('null', { status: 200 })),
+      fetch: isSupabaseEnabled
+        ? undefined
+        : () => Promise.resolve(new Response('null', { status: 200 })),
+    },
+    db: {
+      schema: 'public',
     },
   }
 )
 
-// Restart token auto-refresh when app comes to foreground
 if (isSupabaseEnabled) {
   AppState.addEventListener('change', (state) => {
     if (state === 'active') {

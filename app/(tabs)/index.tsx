@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react'
+import React, { useMemo, useState, useCallback } from 'react'
 import {
   View,
   ScrollView,
@@ -6,6 +6,11 @@ import {
   RefreshControl,
   Pressable,
   Image,
+  Modal,
+  TextInput,
+  KeyboardAvoidingView,
+  Platform,
+  ActivityIndicator,
 } from 'react-native'
 import { router } from 'expo-router'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
@@ -42,12 +47,14 @@ import {
   BG,
   BORDER,
   ERROR,
+  TEXT_DISABLED,
 } from '@/lib/theme'
 import { TAB_BAR_CLEARANCE } from '@/components/TabBar'
 import { useMeals, useDeleteMeal, type MealLog, type MealType } from '@/hooks/useMeals'
 import { useGoals } from '@/hooks/useGoals'
 import { useStreak } from '@/hooks/useStreaks'
 import { useProfile } from '@/hooks/useProfile'
+import { useLatestWeight, useAddWeight } from '@/hooks/useWeightTracking'
 
 export default function HomeScreen() {
   const insets = useSafeAreaInsets()
@@ -55,6 +62,24 @@ export default function HomeScreen() {
 
   const [selectedDate, setSelectedDate] = useState<Date>(new Date())
   const [refreshing, setRefreshing] = useState(false)
+  const [weightModal, setWeightModal] = useState(false)
+  const [weightInput, setWeightInput] = useState('')
+  const [updatingWeight, setUpdatingWeight] = useState(false)
+
+  const { data: latestWeight } = useLatestWeight()
+  const addWeightMutation = useAddWeight()
+
+  const handleAddWeight = useCallback(async () => {
+    const kg = parseFloat(weightInput)
+    if (isNaN(kg) || kg <= 0 || kg >= 500) return
+    setUpdatingWeight(true)
+    try {
+      await addWeightMutation.mutateAsync(kg)
+      setWeightModal(false)
+      setWeightInput('')
+    } catch { /* ignore */ }
+    finally { setUpdatingWeight(false) }
+  }, [weightInput, addWeightMutation])
 
   const getLocalDateString = (date: Date) => {
     const year = date.getFullYear()
@@ -190,6 +215,20 @@ export default function HomeScreen() {
             <Text style={s.streakLabel}>day{streak !== 1 ? 's' : ''}</Text>
           </View>
         </View>
+
+        {/* Weight Card */}
+        {latestWeight && (
+          <Pressable onPress={() => setWeightModal(true)}>
+            <Card style={s.weightSummaryCard}>
+              <Ionicons name="scale-outline" size={16} color={TEXT_SECONDARY} />
+              <Text style={s.weightSummaryText}>{latestWeight.weightKg} kg</Text>
+              <View style={s.weightSummaryDot} />
+              <Text style={s.weightSummaryLabel}>Today</Text>
+              <View style={{ flex: 1 }} />
+              <Ionicons name="chevron-forward" size={14} color={TEXT_TERTIARY} />
+            </Card>
+          </Pressable>
+        )}
 
         {/* Date Selector */}
         <View style={s.dateSlider}>
@@ -354,6 +393,38 @@ export default function HomeScreen() {
         })}
       </ScrollView>
 
+      {/* Weight Log Modal */}
+      <Modal visible={weightModal} transparent animationType="fade" onRequestClose={() => !updatingWeight && setWeightModal(false)}>
+        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={s.wmContainer}>
+          <Pressable style={s.wmBackdrop} onPress={() => !updatingWeight && setWeightModal(false)} />
+          <View style={s.wmSheet}>
+            <View style={s.wmHandle} />
+            <Text style={s.wmTitle}>Log Weight</Text>
+            <Text style={s.wmSub}>Enter your current weight in kilograms.</Text>
+            <View style={s.wmForm}>
+              <Text style={s.wmLabel}>WEIGHT (KG)</Text>
+              <TextInput
+                value={weightInput}
+                onChangeText={(v) => setWeightInput(v.replace(/[^0-9.]/g, ''))}
+                keyboardType="decimal-pad"
+                style={s.wmInput}
+                placeholder="e.g. 72.5"
+                placeholderTextColor={TEXT_DISABLED}
+                autoFocus
+              />
+            </View>
+            <View style={s.wmActions}>
+              <Pressable disabled={updatingWeight} onPress={() => setWeightModal(false)} style={s.wmCancel}>
+                <Text style={s.wmCancelText}>Cancel</Text>
+              </Pressable>
+              <Pressable disabled={updatingWeight || !weightInput} onPress={handleAddWeight} style={({ pressed }) => [s.wmSave, pressed && { opacity: 0.85 }]}>
+                {updatingWeight ? <ActivityIndicator size="small" color="#fff" /> : <Text style={s.wmSaveText}>Save</Text>}
+              </Pressable>
+            </View>
+          </View>
+        </KeyboardAvoidingView>
+      </Modal>
+
       {/* FAB */}
       <View style={[s.fabContainer, { bottom: insets.bottom + TAB_BAR_CLEARANCE + 16 }]}>
         <Pressable
@@ -425,6 +496,20 @@ const s = StyleSheet.create({
   },
   streakCount: { fontSize: 13, fontWeight: '800', color: STREAK_RED },
   streakLabel: { fontSize: 12, fontWeight: '600', color: TEXT_SECONDARY },
+
+  // Weight Summary
+  weightSummaryCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+  },
+  weightSummaryText: { fontSize: 14, fontWeight: '700', color: TEXT_PRIMARY },
+  weightSummaryDot: {
+    width: 4, height: 4, borderRadius: 2, backgroundColor: TEXT_TERTIARY,
+  },
+  weightSummaryLabel: { fontSize: 12, color: TEXT_SECONDARY, fontWeight: '500' },
 
   // Date Slider
   dateSlider: {
@@ -560,6 +645,22 @@ const s = StyleSheet.create({
     borderWidth: 1,
     borderColor: 'rgba(186,26,26,0.12)',
   },
+
+  // Weight Modal
+  wmContainer: { flex: 1, justifyContent: 'flex-end' },
+  wmBackdrop: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.45)' },
+  wmSheet: { backgroundColor: SURFACE_ELEVATED, borderTopLeftRadius: 28, borderTopRightRadius: 28, paddingTop: 12, paddingHorizontal: 24, paddingBottom: 32, gap: 16 },
+  wmHandle: { alignSelf: 'center', width: 36, height: 4, borderRadius: 2, backgroundColor: OUTLINE_VARIANT, marginBottom: 4 },
+  wmTitle: { color: TEXT_PRIMARY, fontSize: 19, fontWeight: '800', textAlign: 'center' },
+  wmSub: { color: TEXT_SECONDARY, fontSize: 13, textAlign: 'center', lineHeight: 18 },
+  wmForm: { gap: 14 },
+  wmLabel: { fontSize: 11, fontWeight: '700', color: TEXT_TERTIARY, letterSpacing: 0.8, textTransform: 'uppercase' },
+  wmInput: { height: 48, backgroundColor: SURFACE_CONTAINER_LOW, borderWidth: 1, borderColor: OUTLINE_VARIANT, borderRadius: 14, paddingHorizontal: 14, color: TEXT_PRIMARY, fontSize: 15, fontWeight: '500' },
+  wmActions: { flexDirection: 'row', gap: 12, marginTop: 6 },
+  wmCancel: { flex: 1, height: 50, alignItems: 'center', justifyContent: 'center', borderRadius: 24, backgroundColor: SURFACE_CONTAINER_LOW },
+  wmCancelText: { color: TEXT_PRIMARY, fontSize: 15, fontWeight: '600' },
+  wmSave: { flex: 1, height: 50, alignItems: 'center', justifyContent: 'center', borderRadius: 24, backgroundColor: PRIMARY },
+  wmSaveText: { color: '#fff', fontSize: 15, fontWeight: '700' },
 
   // FAB
   fabContainer: {

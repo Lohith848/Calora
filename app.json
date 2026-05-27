@@ -41,9 +41,14 @@
           "action": "VIEW",
           "autoVerify": true,
           "data": [
-            { "scheme": "calora" }
+            {
+              "scheme": "calora"
+            }
           ],
-          "category": ["BROWSABLE", "DEFAULT"]
+          "category": [
+            "BROWSABLE",
+            "DEFAULT"
+          ]
         }
       ]
     },
@@ -72,7 +77,8 @@
           "organization": "your-org"
         }
       ],
-      "@sentry/react-native"
+      "@sentry/react-native",
+      "expo-web-browser"
     ],
     "extra": {
       "router": {},

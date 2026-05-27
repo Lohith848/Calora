@@ -84,6 +84,8 @@ export default function ScanScreen() {
   const [carbs, setCarbs] = useState('0')
   const [fat, setFat] = useState('0')
   const [description, setDescription] = useState('')
+  const [servingSize, setServingSize] = useState('')
+  const [confidence, setConfidence] = useState(0)
   const [mealType, setMealType] = useState<MealType>(getSuggestedMealType())
 
   const getLocalDateString = (date: Date) => {
@@ -182,6 +184,12 @@ export default function ScanScreen() {
       setCarbs(String(result.carbs))
       setFat(String(result.fat))
       setDescription(result.description)
+      setServingSize(result.servingSize)
+      setConfidence(result.confidence)
+
+      if (result.confidence < 0.3) {
+        setError('Low confidence in food detection. Please verify the nutritional values carefully.')
+      }
 
       setStep('editor')
     } catch (err: any) {
@@ -315,6 +323,9 @@ export default function ScanScreen() {
                 <Text style={s.heroDesc} numberOfLines={2}>
                   {description || 'Adjust coordinates or values below if the estimation needs tuning.'}
                 </Text>
+                {servingSize ? (
+                  <Text style={s.servingText}>{servingSize} · {Math.round(confidence * 100)}% confidence</Text>
+                ) : null}
               </View>
             </View>
 
@@ -663,6 +674,12 @@ const s = StyleSheet.create({
     fontSize: 12.5,
     color: TEXT_SECONDARY,
     lineHeight: 18,
+  },
+  servingText: {
+    fontSize: 11,
+    color: TEXT_TERTIARY,
+    marginTop: 2,
+    fontWeight: '500',
   },
 
   sheetCard: {
