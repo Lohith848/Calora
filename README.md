@@ -57,6 +57,6 @@ lib/          - Utilities and services
 assets/       - Images and static assets
 ```
 
-## Built By
+---
 
-LOHITH G
+Made by lohith // powered by curiosity.
